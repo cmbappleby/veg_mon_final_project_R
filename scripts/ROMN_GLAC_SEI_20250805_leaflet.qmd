@@ -1,0 +1,3230 @@
+---
+title: "Streams Monitoring: Glacier NP -- DRAFT"
+author: "ROMN"
+format: 
+  dashboard:
+    orientation: columns
+    embed-resources: true
+    theme: lumen_mh.scss
+    logo: images/AH_large_flat_4C.png
+    css: styles.css
+    # scrolling: true
+
+#execute:
+  #cache: true #cache helps with faster rendering, but can keep visual errors unintentionally. Delete cache occasionally, or when final draft.
+lightbox: false
+
+---
+```{r notes}
+#* Draft
+#* Needs: 
+#* Streamgage temperature plots in style of logger plots (highlights August bull trout spawn season)
+#* Functions to clean up code
+
+```
+
+```{r setup, include = F}
+
+knitr::opts_chunk$set(echo = FALSE, message = F, warning = F)
+options(knitr.duplicate.label = "allow")
+
+# Install any missing packages
+list.of.packages <- c("dplyr", 'tidyverse', 'readxl', 'lubridate', 
+                      'ggplot2', 'grid', 'gridExtra', 'kableExtra', 'cowplot',
+                      'zoo','tseries',
+                      'PerformanceAnalytics',
+                      'EGRET', 'dataRetrieval',
+                      'sf', 'leaflet',
+                      'quantreg', 'rkt', 'zyp','scales'
+)
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# Load packages
+lapply(list.of.packages, library, character.only = T)
+
+```
+
+```{r variables adjustment setup, include = F}
+
+#*This dataframe guides many of the data retrieval and display options. It can be expanded and modified for different sites, interests, etc.
+#*
+#*WS describes whether the site is Wild and Scenic, and just adjusts display on the leaflet map
+#*Site refers to ROMN site ID, but this can be any ID system as long as it is consistent. 
+#*GageID must be valid USGS streamgage ID
+#*Start and End date can dictate limitations to gageData
+#*SiteName is a descriptive name for the site for plot titles
+#*equisName must refer to the site name in EQUIS data, which matches ROMN names
+#*loggercsv is the path to logger data from Aquarius
+
+ # For hydrograph and temperature graphs
+streamgages <- tribble(
+  ~Site,       ~GageID, ~hydromax,   ~StartDate,   ~EndDate, ~SiteName, ~equisName, ~loggercsv,
+  "GLAC_013", "12355500", 25000, "1910-10-01", "2024-12-31",       "North Fork Flathead River near Columbia Falls MT", "North Fork Flathead River Glacier Rim",
+  "../data/water/logger/Water_Temp.Water_Temperature_(C)_HOBO@GLAC_013.EntireRecord_WithGapMarkers.csv",
+  
+  "GLAC_022",   "12355000", 9000, "1975-09-18", "2024-12-31",       "Flathead River at Flathead British Columbia", "North Fork Flathead River Border",
+  "../data/water/logger/Water_Temp.Water_Temperature_(C)_HOBO@GLAC_022.EntireRecord_WithGapMarkers.csv",
+
+  
+  "GLAC_S01",   "05014300", 800, "2012-04-13", "",       "Swiftcurrent Creek ab Swiftcurrent Lake at Many Glacier", "Swiftcurrent Creek",
+  "../data/water/logger/Water_Temp.Water_Temperature_(C)_HOBO@GLAC_S01.EntireRecord_WithGapMarkers.csv",
+
+  "GLAC_S06",   "12358500", 25000, "", "", "Middle Fork Flathead River near West Glacier MT", "Lower Middle Fork Flathead River",
+  "../data/water/logger/Water_Temp.Water_Temperature_(C)_HOBO@GLAC_S06.EntireRecord.csv"
+  # ,
+
+  #
+  # "GLAC_S04", NULL, 25000, "", "", "Reynolds Creek", "Reynolds Creek",  "../data/water/logger/Water_Temp.Water_Temperature_(C)_HOBO@GLAC_S04.EntireRecord.csv"
+
+  )
+
+
+# For map display
+locations <- tribble(
+  ~WS, ~Site, ~SiteName, ~Lat, ~Lon,
+  T,   "GLAC_013", "North Fork Flathead River Glacier Rim", 48.484499,	-114.1022385,
+  T,   "GLAC_022", "North Fork Flathead River Border", 48.99412092,	-114.4663784,
+  F,   "GLAC_S01", "Swiftcurrent Creek", 48.79533446,	-113.6806013,
+  T,   "GLAC_S06", "Lower Middle Fork Flathead River", 48.485472,	-114.03424,
+  T,   "USGS Site ID 12355500", "North Fork Flathead River near Columbia Falls MT", 48.4957972, -114.1267639,
+  T,   "USGS Site ID 12355000", "Flathead River at Flathead British Columbia", 49.00124167, -114.4756639,
+  F,   "USGS Site ID 05014300", "Swiftcurrent Creek ab Swiftcurrent Lake at Many Glacier", 48.7954444, -113.6805833,
+  T,   "USGS Site ID 12358500", "Middle Fork Flathead River near West Glacier MT", 48.49551667, -114.0102083
+  # ,
+  #
+  # F, "GLAC_S04", "Reynolds Creek", 48.691194, -113.717256
+)
+#this vector filters out the key metrics from the metrics data. 
+#If other metrics are of interest, then they should be included 
+#here if they exist in the data. 
+
+mets<- c("x_HBI", "x_Shan_e","x_Evenness", "x_D")
+
+```
+
+```{r data import setup, include = F}
+### WATER CHEM DATA
+wchem2 <- read_xlsx("../data/water/ROMN_SEI_in_EQuIS_20240927.xlsx")
+
+### SAMPLING METADATA
+siteevent <- read_xlsx("../data/summary.eventsitemetadata_20230421.xlsx")
+
+### METRICS DATA
+metrics_macros <- read.csv("../data/macros/metrics_calc_trans_macros.csv")
+
+### GIS DATA
+park_boundary<- st_read("../data/geospatial/glac_romo_boundary.shp") %>% 
+  filter(UNIT_CODE == 'GLAC')%>%  #this shp includes ROMO, so can adjust this filter for that case.
+  st_transform(crs = 4326)
+
+streams_shp <- st_read("../data/geospatial/EDNA_2000_GLACStreams.shp") %>% 
+  st_transform(crs = 4326) 
+
+# you can add more geospatial data for display in leaflet maps. 
+
+# alternative to wchem2, extracting from water quality portal, but column names format is different and year range of data can vary
+# WQP_ROMN_SEI<- readWQPdata(project = 'ROMN_SEI',
+#                 dataProfile = "resultPhysChem"
+# )
+```
+
+
+```{r macros metric data setup}
+### Prep metrics data, adding metadata
+
+metrics_dated <- siteevent %>% 
+  filter(#SiteAlias %in% sitename,
+         FieldVisitType != 'QAQC')%>%
+  select(EventName, SiteName, SiteAlias, Park, SiteType_Design, FieldVisitType, 
+         Latitude, Longitude, QC_Status, StartDate)%>% 
+  left_join(metrics_macros %>% select(EventName, all_of(mets)),
+            by = join_by(EventName))
+
+```
+
+```{r get gage data setup, include = F}
+### function to get gage flow data
+get_gage_data <- function(site) {
+  if(is.null(site$GageID)){
+    return(
+      list(
+      Daily = NULL, 
+      SiteName = site$SiteName, 
+      StartYear = year(ymd(site$StartDate)), 
+      EndYear = NULL))
+}else{
+
+  Daily <- readNWISDaily(site$GageID, "00060", site$StartDate, site$EndDate) |>
+    # Filter to accepted data
+    filter(grepl('A', Qualifier)) |>  
+    # Change discharge to cubic feet per second (cfs)
+    mutate(cfs = Q * 35.314666212661, Year = trunc(DecYear))
+  
+  # Determine the latest year there is accepted data for
+  latest_yr <- NA
+  
+  if (nrow(Daily) > 0 && any(!is.na(Daily$Date))) {
+    latest_yr <- max(year(ymd(Daily$Date)), na.rm = TRUE)
+  }
+  
+  # Determine the end year
+  EndYear <- if (site$EndDate == "") {
+    latest_yr
+  } else {
+    year(ymd(site$EndDate))
+  }
+  
+  # Return list containing Daily data and other site information
+  list(
+    Daily = Daily, 
+    SiteName = site$SiteName, 
+    StartYear = year(ymd(site$StartDate)), 
+    EndYear = EndYear )
+  }
+}
+
+### Function to get temperature data for each site
+get_temp_gage_data <- function(site) {
+  temp_gage_data <- dataRetrieval::readNWISuv(site$GageID, "00010", site$StartDate, site$EndDate)
+   
+  if (nrow(temp_gage_data) == 0) {
+    temp_gage_data = 0
+    StartYear = NA
+    EndYear = NA
+  } else {
+    
+  # Rename columns, calculate metrics using accepted data
+  temp_gage_data <- dataRetrieval::renameNWISColumns(temp_gage_data) |> 
+    filter(Wtemp_Inst_cd == "A") |> 
+    mutate(Date = as.Date(dateTime), Date2 = as.Date(dateTime)) |>
+    group_by(Date) |>
+    summarize(max_daily_temp = max(Wtemp_Inst, na.rm = TRUE),
+              mean_daily_temp = mean(Wtemp_Inst, na.rm = TRUE))
+  
+  temp_gage_data$mean_daily_temp<-round(temp_gage_data$mean_daily_temp, 1)
+  
+  # Determine the latest year there is accepted data for
+  latest_temp_yr <- NA
+  earliest_temp_yr <- NA
+  
+  if (nrow(temp_gage_data) > 0 && any(!is.na(temp_gage_data$Date))) {
+    latest_temp_yr <- max(year(ymd(temp_gage_data$Date)), na.rm = TRUE)
+    earliest_temp_yr <- min(year(ymd(temp_gage_data$Date)), na.rm = TRUE)
+  }
+  
+  # Determine start year
+  StartYear <- if (site$StartDate == "") {
+    earliest_temp_yr
+  } else {
+    year(ymd(site$StartDate))
+  }
+  
+  # Determine end year
+  EndYear <- if (site$EndDate == "") {
+    latest_temp_yr
+  } else {
+    year(ymd(site$EndDate))
+  }
+  }
+  
+  # Return list containing temp_gage_data data and other site information
+  list(
+    temp_gage_data = temp_gage_data, 
+    SiteName = site$SiteName, 
+    StartYear = StartYear, 
+    EndYear = EndYear )
+}
+
+```
+
+```{r plot gage data setup, include = F}
+plot_hydrograph <- function(yoi, gage_data, ymax){
+  hydro_yr <- yoi
+  hydro_yr_daily <- Daily |> filter(Year == hydro_yr)|> select(Day, cfs) 
+
+
+  
+# Determine beginning year for mean data
+begin_yr <- gage_data$StartYear
+
+# Calculate metrics for graph and filter out NAs in the cfs column
+cfs_historical <- Daily |>
+  filter(Year >= gage_data$StartYear & Year <= gage_data$EndYear)|>
+  group_by(Day)|>
+  summarize(`25%` = quantile(cfs, 0.25), 
+            Mean = mean(cfs), 
+            `75%` = quantile(cfs, 0.75)) |>
+  left_join(hydro_yr_daily, by = 'Day') |>
+  filter(!is.na(cfs))
+
+# ggplot scale vectors
+
+scalecolour<- c("blue","black","azure4","azure4")
+scalelinetype<- c(1,5,6,6)
+breaks <- c(paste(hydro_yr, "Discharge"),
+                 paste0(begin_yr, "-", hydro_yr, " Mean Discharge"),
+                 "25th Percentile",
+                 "75th Percentile")
+names(scalecolour) <- breaks
+names(scalelinetype) <- breaks
+
+# Create hydrograph *YEARS NEED TO BE HARD CODED*
+plot_hydro <- ggplot(cfs_historical, aes(x = Day)) +
+  
+  geom_line(aes(y = cfs, color = names(scalecolour)[1], lty = names(scalecolour)[1]), lwd = 1) +
+  geom_line(aes(y = Mean, color = names(scalecolour)[2], lty = names(scalecolour)[2]), lwd = 1) +
+  geom_line(aes(y = `25%`, color = "25th Percentile", lty = "25th Percentile"), lwd = 1, alpha = 0.75) +
+  geom_line(aes(y = `75%`, color = "75th Percentile", lty = "75th Percentile"), lwd = 1, alpha = 0.75) +
+  
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.title = element_text(size = 13),
+        legend.text = element_text(size = 11),
+        legend.position = "bottom") +
+  
+  labs(x = "Day of the Year", 
+       y = "Discharge (cfs)", 
+       title = paste0(hydro_yr, " Hydrograph for\n ", gage_data$SiteName)) +
+  
+  scale_y_continuous(limits = c(0, ymax)) +
+  scale_x_continuous(limits = c(0, 366)) +
+  
+  scale_color_manual(name = "Legend",
+                     values = scalecolour,
+                     breaks = breaks,
+                     guide = guide_legend(nrow = 2)) +
+  scale_linetype_manual(name = "Legend",
+                        values = scalelinetype,
+                        breaks = breaks,
+                        guide = guide_legend(nrow = 2)) 
+
+
+plot_hydro
+}
+
+plot_temp <- function(yoi, gage_temp_NFFR){
+
+# Determine beginning and year of interest for mean data
+NFFR_temp_begin_yr <- gage_temp_NFFR$StartYear
+NFFR_temp_latest_yr <- yoi
+
+if (is.null(nrow(gage_temp_NFFR$temp_gage_data))) {
+  plot_temp_NFFR <- ggplot() + 
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+          axis.title = element_text(size = 14, face = "bold")) +
+    labs(x = "Month", 
+         y = "Temperature (\u00B0C)",
+         title = paste("No temperature data for", gage_temp_NFFR$SiteName))
+}else{
+  
+
+# Filter dataset to latest year there is accepted data for
+NFFR_temp_data_latest <- gage_temp_NFFR$temp_gage_data |>
+  filter(grepl(NFFR_temp_latest_yr, Date)) |>
+  mutate(Month = month(ymd(Date)))
+
+# Calculate number of days in August that max daily temp was at or above the lower limit ecological threshold
+spawn_threshold_days <- nrow(NFFR_temp_data_latest[NFFR_temp_data_latest$Month==8 & NFFR_temp_data_latest$max_daily_temp>14, ])
+
+# Create scale vectors to use for dynamic naming
+scalecolor_NFFR_T <- c("orange", "red", "black", "azure4", "azure4")
+scalelinetype_NFFR_T <- c(1, 1, 1, 2, 2)
+breaks_NFFR_T <- c(paste(NFFR_temp_latest_yr, "Maximum Daily Water Temperature"),
+                   "August, bull trout spawning season",
+                   paste0(NFFR_temp_begin_yr, "-", NFFR_temp_latest_yr, " Mean Water Temperature"),
+                   "Lower limit, ROMN ecological threshhold for bull trout (10\u00B0C)",
+                   "Upper limit, ROMN ecological threshhold for bull trout (14\u00B0C)")
+names(scalecolor_NFFR_T) <- breaks_NFFR_T
+names(scalelinetype_NFFR_T) <- breaks_NFFR_T
+
+# Plot max and mean daily temp data, thresholds 
+plot_temp_NFFR <- ggplot(NFFR_temp_data_latest, aes(x= Date)) +
+  
+  geom_line(aes(y = max_daily_temp, color = paste(NFFR_temp_latest_yr, "Maximum Daily Water Temperature"), linetype = paste(NFFR_temp_latest_yr, "Maximum Daily Water Temperature")), lwd = 1) +
+  
+  geom_line(data  = NFFR_temp_data_latest[which(NFFR_temp_data_latest$Month == 8),], aes(y = max_daily_temp, color = "August, bull trout spawning season", linetype = "August, bull trout spawning season"), lwd = 1) +
+    
+  geom_line(aes(y = mean_daily_temp, color = paste0(NFFR_temp_begin_yr, "-", NFFR_temp_latest_yr, " Mean Water Temperature"), linetype = paste0(NFFR_temp_begin_yr, "-", NFFR_temp_latest_yr, " Mean Water Temperature")), lwd = 1) +
+  
+  geom_hline(aes(yintercept = 10, color = "Lower limit, ROMN ecological threshhold for bull trout (10\u00B0C)", linetype = "Lower limit, ROMN ecological threshhold for bull trout (10\u00B0C)"), lwd = 1) +
+  
+  geom_hline(aes(yintercept = 14, color = "Upper limit, ROMN ecological threshhold for bull trout (14\u00B0C)", linetype = "Upper limit, ROMN ecological threshhold for bull trout (14\u00B0C)"), lwd = 1) +
+  
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.title = element_text(size = 13, hjust = 0.5),
+        legend.text = element_text(size = 11),
+        legend.position = "bottom",
+        legend.title.position = "top",
+        plot.caption = element_text(size = 13, hjust = 0.5)) +  
+  
+  labs(x = "Month", 
+       y = "Temperature (\u00B0C)", 
+       title = paste0(NFFR_temp_latest_yr, " Maximum Daily Streamgage Temperature at\n", gage_temp_NFFR$SiteName),
+       caption = paste(spawn_threshold_days, "days in the August", paste(NFFR_temp_latest_yr, "bull trout spawning season had a maximum daily \ntemperature that exceeded the upper limit ecological threshold of 14\u00B0C."))) +
+  
+  scale_y_continuous(limits = c(0, 23)) +
+  
+  scale_color_manual(name = "Legend", 
+                     values = scalecolor_NFFR_T,
+                     breaks = breaks_NFFR_T,
+                     guide = guide_legend(nrow = 3)) +
+  
+  scale_linetype_manual(name = "Legend",
+                        values = scalelinetype_NFFR_T,
+                        breaks = breaks_NFFR_T,
+                        guide = guide_legend(nrow = 3))
+}
+
+plot_temp_NFFR
+}
+```
+
+```{r logger temp setup}
+# Create function to read in and prep data and produce graph ----
+plot_logger <- function(year = 2025, logger_csv_path) {
+  # Read in data and filter to Approved data
+  logger_data <- readr::read_csv(logger_csv_path, comment = "#") |> 
+    filter(!is.na(Value) & `Approval Level` == "Approved")
+  
+  # Read in file again and only keep commented site info
+  site_info <- readr::read_csv(logger_csv_path, col_names = FALSE, n_max = 12) 
+  
+  # Pull site name from site info
+  sitename <- str_remove(site_info[4, 1], "# Location: ")
+  
+  # Determine temporal range of data
+  begin_date <- as.Date(min(logger_data$`ISO 8601 UTC`))
+  end_date <- as.Date(max(logger_data$`ISO 8601 UTC`))
+  
+  if (year < year(ymd(end_date)) && year >= year(ymd(begin_date))) { 
+    end_date = paste0(year, "-12-31")
+    end_date = as.Date(end_date)
+  }
+  
+  # Calculate metrics for graph
+  logger_data <- logger_data |>
+    mutate(Date = as.Date(`ISO 8601 UTC`)) |>
+    filter(Date >= begin_date & Date <= end_date) |>
+    group_by(Date) |>
+    summarize(max_daily_temp = max(Value), 
+              mean_daily_temp = mean(Value)) |>
+    filter(grepl(year(ymd(end_date)), Date)) |> 
+    mutate(Month = month(ymd(Date)))
+  
+  logger_data$max_daily_temp<-round(logger_data$max_daily_temp, 1)
+  logger_data$mean_daily_temp<-round(logger_data$mean_daily_temp, 1)
+  
+  # Calculate number of days in August that max daily temp was at or above the lower limit ecological threshold
+  spawn_threshold_days <- nrow(logger_data[logger_data$Month==8 & logger_data$max_daily_temp>14, ])
+  
+  # Create scale vectors to use for dynamic naming
+  scalecolor_logger <- c("orange", "red", "black", "azure4", "azure4")
+  scalelinetype_logger <- c(1,1,1,2,2)
+  breaks_logger <- c(paste(year(ymd(end_date)), "Maximum Daily Water Temperature"),
+                     "August, bull trout spawning season",
+                     paste0(year(ymd(begin_date)), "-", year(ymd(end_date)), " Mean Water Temperature"),
+                     "Lower limit, ROMN ecological threshold for bull trout (10\u00B0C)",
+                     "Upper limit, ROMN ecological threshold for bull trout (14\u00B0C)")
+  names(scalecolor_logger) <- breaks_logger
+  names(scalelinetype_logger) <- breaks_logger
+  
+  # Plot daily maximum temperature, historic mean, and ROMN bull trout ecological threshold
+  plot_temp_logger <- ggplot(logger_data, aes(x= Date)) +
+    
+    geom_line(aes(y = max_daily_temp, color = paste(year(ymd(end_date)), "Maximum Daily Water Temperature"), linetype = paste(year(ymd(end_date)), "Maximum Daily Water Temperature")), lwd = 1) +
+    
+    geom_line(data  = logger_data[which(logger_data$Month == 8),], aes(y = max_daily_temp, color = "August, bull trout spawning season", linetype = "August, bull trout spawning season"), lwd = 1) +
+    
+    geom_line(aes(y = mean_daily_temp, color = paste0(year(ymd(begin_date)), "-", year(ymd(end_date)), " Mean Water Temperature"), linetype = paste0(year(ymd(begin_date)), "-", year(ymd(end_date)), " Mean Water Temperature")), lwd = 1) +
+    
+    geom_hline(aes(yintercept = 10, color = "Lower limit, ROMN ecological threshold for bull trout (10\u00B0C)", linetype = "Lower limit, ROMN ecological threshold for bull trout (10\u00B0C)"), lwd = 1) +
+    
+    geom_hline(aes(yintercept = 14, color = "Upper limit, ROMN ecological threshold for bull trout (14\u00B0C)", linetype = "Upper limit, ROMN ecological threshold for bull trout (14\u00B0C)"), lwd = 1) +
+    
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+          axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14, face = "bold"),
+          legend.title = element_text(size = 13, hjust = 0.5),
+          legend.text = element_text(size = 11),
+          legend.position = "bottom",
+          legend.title.position = "top",
+          plot.caption = element_text(size = 13, hjust = 0.5)) +  
+    
+    labs(x = "Month", 
+         y = "Temperature (\u00B0C)", 
+         title = paste0(year(ymd(end_date)), " Maximum Daily Water Temperature at ", sitename),
+         caption = paste(spawn_threshold_days, "days in the August", paste(year(ymd(end_date)), "bull trout spawning season had a maximum daily \ntemperature that exceeded the upper limit ecological threshold of 14\u00B0C."))) +
+    
+    scale_y_continuous(limits = c(-2, 22.5)) +
+    
+    scale_color_manual(name = "Legend", 
+                       values = scalecolor_logger,
+                       breaks = breaks_logger,
+                       guide = guide_legend(nrow = 3)) +
+    
+    scale_linetype_manual(name = "Legend",
+                          values = scalelinetype_logger,
+                          breaks = breaks_logger,
+                          guide = guide_legend(nrow = 3)) 
+  plot_temp_logger
+}
+```
+
+```{r plot macros setup}
+plot_macros <- function(input_metrics_dated_site){
+  datedate<- c(min(input_metrics_dated_site$StartDate[!is.na(input_metrics_dated_site[mets[1]])]),
+             max(input_metrics_dated_site$StartDate[!is.na(input_metrics_dated_site[mets[1]])])) #xlim to align plots correctly
+  wchem_macros <- input_metrics_dated_site %>% 
+    select(EventName, SiteAlias, StartDate, 
+           "Hilsenhoff Biotic Index (HBI)"="x_HBI", 
+           "Shannon's Diversity"="x_Shan_e",
+           "Pielou's Evenness"="x_Evenness", 
+           "Simpson's Diversity"="x_D")%>%
+    pivot_longer(cols = c("Hilsenhoff Biotic Index (HBI)", "Shannon's Diversity","Pielou's Evenness", "Simpson's Diversity"), 
+                 names_to = 'index',
+                 values_to = 'index_value')
+  
+  p1<- ggplot(wchem_macros,
+              aes(y = index_value, x = StartDate, colour = index)) + 
+    geom_point(shape=18, size = 2)+
+    scale_color_manual(name="Index",
+                       values = c('darkgreen', 'green3', 'tan2', 'tan'))+
+    geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+    labs(y = '', x = 'Date',
+         color = '')+
+    geom_hline(yintercept=4,color='darkgreen',
+             linetype='dashed')+
+    annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+            y = 4, label = "MTDEQ HBI Threshold", vjust = -0.8, size = 3)
+  
+  p1
+  
+}
+```
+
+```{r map leaflet setup}
+map_leaflet <- function(data, center_lat, center_long, zoom){
+  m=leaflet(data = data) %>%
+  setView(lat = center_lat, lng = center_long, zoom = zoom) %>%
+  addTiles(group = 'OpenStreetMap')%>%
+  addProviderTiles(provider = "Esri.WorldImagery", group = 'ESRI World Imagery')%>%
+  addPolylines(data = park_boundary,
+               weight = 3, color = "black")%>%
+  addPolylines(data = streams_shp,
+               weight = 2)%>%
+  addCircleMarkers(
+    lat = locations$Lat, lng = locations$Lon,
+    color= ~ifelse(locations$WS==T, "darkgreen", "tan"),
+    stroke = F,
+    fillOpacity = 0.7,
+    popup = paste0(locations$SiteName, "<br>", locations$Site)
+  )%>%
+  addLayersControl(
+    baseGroups = c("OpenStreetMap", 'ESRI World Imagery'))%>%
+  addLegend(data = data,
+            position = "bottomright",
+            colors =c("darkgreen", "tan"),
+            labels = c('Wild and Scenic', 'Other'),
+            title = "Legend",
+            opacity = 1)
+
+m
+}
+
+```
+
+```{r labsrange setup}
+#this function finds the date of lab changes, and creates a vertical position for the label that won't overlap with other labels.
+calc_labsrange<-function(SEICHEM){
+  labsrange <- SEICHEM %>% group_by(Lab_ID) %>% #create df with labs, start dates, evenly spaced y position on plot
+  summarise(min_value = min(Start_Date, na.rm = T),
+            max_value = max(Start_Date, na.rm = T))
+
+if(nrow(SEICHEM)!=0){
+  labsrange$position <- seq(mean(range(SEICHEM$Lab_Reported_Result, na.rm = T))- #20% reduced to mean lower range
+                          diff(range(SEICHEM$Lab_Reported_Result, na.rm = T)) * 0.8 / 2,
+                        mean(range(SEICHEM$Lab_Reported_Result, na.rm = T))+ #20% reduced to mean upper range
+                          diff(range(SEICHEM$Lab_Reported_Result, na.rm = T)) * 0.8 / 2,
+                        length.out = length(unique(SEICHEM$Lab_ID)))
+}else{
+  labsrange$position <- 0
+}
+  return(labsrange)
+}
+
+```
+
+# Overview
+
+## Column streams {width="40%"}
+
+### Row summary {height=65%}
+
+::: {.card title="Overview"}
+Streams and rivers are excellent indicators of Glacier’s overall ecological condition. Since 2007, the Rocky Mountain Inventory and Monitoring Network at the National Park Service has selected a suite of stream indicators that provide long-term ecological monitoring data and information to park managers. Network monitoring is based on the premise that understanding and managing the streams and rivers in the park operates on the basis that a hydrologic system in good condition supports a balanced, integrated, and adaptive community of organisms, with a species composition, diversity, and functional organization comparable to that of the highest quality natural habitats of the region. Regulatory considerations or site-specific project considerations also provide an important context for stream monitoring in Glacier.
+
+This dashboard summarizes simple trends in data collected at four sites at Glacier National Park: three of which are characterized as [Wild and Scenic](https://www.rivers.gov/montana). The National Wild and Scenic Rivers System was created to preserve select rivers in a free-flowing state that are considered to have outstanding natural, cultural, and recreational value.
+
+In this dashboard, analytes of interest are framed in the context of [regulatory standards and thresholds](https://deq.mt.gov/files/Water/WQPB/Standards/PDF/DEQ7/DEQ-7.pdf) defined by the [Montana Department of Environmental Quality (DEQ)](https://deq.mt.gov/Water/Programs/standards).
+
+:::
+
+### Row see also {height=35%}
+
+::: {.card title="ROMN at a Glance"}
+
+There are 32 National Park Service Inventory and Monitoring Networks across the United States. The [Rocky Mountain Network](https://www.nps.gov/im/romn/index.htm) is one of these networks and monitors six National Park Service units located in Colorado and Montana.
+We monitor key indicators of park health such as streams to help protect and manage national parks in the Rocky Mountains. Our monitoring is science-based, connected to park management, and long-term to help ensure that our national treasures
+
+
+[Stream Ecological Integrity (SEI) Water and Sediment Chemistry Data Package for 2007-2019](https://irma.nps.gov/DataStore/Reference/Profile/2299442)
+
+
+[Glacier National Park stream ecological integrity: 2007–2019 trend synthesis report](https://irma.nps.gov/DataStore/Reference/Profile/2302379)
+
+:::
+
+## Column full map {width="40%"}
+
+```{r}
+cat("title= Map of Sites") #syntax to give dashboard card a title
+
+map_leaflet(locations, '48.76204403756333', '-113.77079598218681', zoom = 9)
+
+```
+
+## Column status {width="20%"}
+
+### Row status 
+
+:::{.card title='Notes'}
+DRAFT: Quality Control procedures are needed for recent Water Quality and Macroinvertebrate data
+
+The ROMN streams protocol will be undergoing revision, anticipated to begin in Fall of 2025.
+
+:::
+
+### Row authors {height="65%"}
+
+:::{.card title='Contact Information'}
+**Dana Witwicki**\
+*Program manager*\
+dana_witwicki\@nps.gov\
+
+**Jennifer Nestler**\
+*Data Manager*\
+jennifer_nestler\@nps.gov\
+
+**Kati Zybko**\
+*Field Coordinator*\
+katherine_zybko\@nps.gov\
+
+**Authors**\
+Mino Han, ROMN [Scientists in Parks](https://www.scientistsinparks.org) Intern\
+Alexa Serrantes, Central Support Office Data Strike Team\
+Jennifer Nestler, ROMN\
+Abigail Volk, ROMN/[CEMML](https://cemml.colostate.edu)\
+Kati Zybko, ROMN\
+:::
+
+# Data Sampling
+
+### tabset {.tabset}
+
+#### Water Chemistry
+Water chemistry (often called water quality) is a key element of stream habitats. It is also a common focus of most long-term stream monitoring programs, especially for regulatory purposes under the Clean Water Act. In ROMN’s streams protocol, water chemistry includes parameters directly analyzed in the field using multiparameter instruments (sondes), including dissolved oxygen, pH, specific conductance, and water temperature. We also include parameters measured in the lab: nutrients, metals, sediments, and major ions.
+
+At ROMN, samples were sent to different labs due to changes in contracts over time. The labs are marked in the event that there is variation from one lab to another.
+
+::: {#fig-sample layout-ncol=2}
+
+![Water sample collection](../images/sampling/mh_water_sampling_resize.jpg){width=85%}
+
+![Sonde deployment](../images/sampling/sonde_maybe_nps.jpg){width=85%}
+:::
+
+#### Logger
+At select stream sites, small temperature loggers are left deployed year-round. These loggers collect stream water temperatures every 30 minutes. Loggers are deployed on cables securely anchored to permanent objects on the bank such as substantial trees, boulders, etc. Loggers are positioned in “rock caves” constructed on the stream bed that serve to protect the logger. Loggers may be installed in PVC housings that help shade them from sunlight. Loggers are deployed in duplicate for redundancy in case of logger failure. If logger data is unavailable for a year, we use stream gage data.
+
+##### Row images {height=30%}
+
+::: {#fig-sampling  layout-ncol=2}
+
+![Logger Installation](../images/sampling/IMG_4441_resize.jpg){width=80%}
+
+!['HOBO' Logger](../images/sampling/GLAC S06 M Fork lower hobos (3)_resize.jpg){width=80%}
+
+:::
+
+
+#### Stream Gage
+U.S. Geological Survey-operated stream gages provide real-time hydrograph information at select sites. The use of an established stream gage is a preferred method of obtaining flow data, but not all ROMN streams sites are near existing gages. At this park, there are three gages operating near our sampling sites during the growing season: 
+[North Fork Flathead River Glacier Rim](http://waterdata.usgs.gov/nwis/nwisman/?site_no=12355500&agency_cd=USGS),
+[North Fork Flathead River Border](http://waterdata.usgs.gov/nwis/nwisman/?site_no=12355000&agency_cd=USGS), and [Swiftcurrent Creek](http://waterdata.usgs.gov/nwis/nwisman/?site_no=05014300&agency_cd=USGS)
+
+When logger temperature data is unavailable, we will present streamgage data instead.
+
+##### Row images {height=30%}
+
+::: {#fig-sampling layout-ncol=2}
+
+![Stream gage at Rocky Mountain NP](../images/sampling/ROMO_S01_gage_resize.jpg){width=90%}
+
+![Stream Gage installation at Grinell Glacier MT](../images/sampling/streamgage_grinell_mt_resize.jpg){width=90%}
+
+:::
+
+
+#### Biota Sampling
+Stream biota, particularly macroinvertebrates and periphyton, were collected at full-sample events during base flow in August. Macroinvertebrates are collected using a kick-net, while periphyton is collected from scrapings of shallow stream surfaces such as rocks. Samples are preserved and sent to a lab, who counts and identifies the taxa in the samples. In this dashboard, we share diversity metrics from macroinvertebrate sampling.
+
+##### Row images {height=30%}  
+
+::: {#fig-sampling layout-ncol=2}
+
+![Macroinvertebrate Sampling](../images/sampling/SEI_ROMO_S01L_SierraWierens_ClaireAnderson_bugs2_resize.jpg){width=75%}
+
+![Macroinvertebrate Sampling](../images/sampling/SEI_GLAC_022_bugssorting_20230822_resize.jpg){width=75%}
+
+:::
+
+
+### tabset {.tabset}
+
+#### Discharge
+
+**Stream discharge** is a key driver in many chemistry analytes. Increased discharge can correlate to the dilution of many chemistry analytes, or in some cases the increased runoff can increase certain concentrations. Because of the depth of complexity in the relationship between discharge and analyte concentrations, we will frame much of the data visualizations in the context of when sampling occurred relative to peak flow.
+
+#### Temperature
+**Water temperature** plays a key role in the ecology of streams.It controls or is related to multiple processes, from primary and secondary productivity, ecosystem-level trophic state, 
+assemblage composition, individual organism behavior and physiological response, to important 
+physiochemical interactions, such as the toxicity of chemical compounds. Shifts in stream 
+temperature can act as a stressor on aquatic species, directly affecting their physiology, and 
+secondarily, by impacting stream processes that most organisms rely on for their survival.
+
+We use an aquatic species-focused ecological threshold for bull trout, Salvelinus confluentus, based on [Selong et al. (2001)](https://academic.oup.com/tafs/article-abstract/130/6/1026/7891373?redirectedFrom=fulltext) and [Rieman and Chandler (1999)](https://www.fs.usda.gov/rm/boise/publications/fisheries/rmrs_1999_riemanb001.pdf). This research documented peak feeding and growth temperatures in the range of 10.9 to 15.4 °C. More specific to the Glacier National Park ecosystem, [Jones et al. (2013)](https://doi.org/10.1002/rra.2638) developed an **optimal thermal range for feeding and growth during the month of August (when stream temperatures are at their maximum) between 10 and 14 °C**. The Flathead River system is likely a historical bull trout fishery (USFWS 1998; C. Downs, NPS biologist, pers. comm. 10/2022) and we apply these minima and maxima values to maximum daily temperatures at these sites.
+
+#### Major Ions
+**Major ions** (such as Calcium [Ca^2+^], Sodium [Na^+^], Chloride [Cl-], Sulfate [SO~4~^2-^]), are chemical constituents (atoms or compounds) that carry a positive or negative charge. Major oppositely charged ions often combine into neutralized “salts” that may also be critical in stream water chemistry. For example, magnesium chloride, is in widespread use as a road deicer and thus is potentially important in effects to streams from runoff of roads.
+Natural sources of ions exist, and the weathering of sedimentary rocks is a primary pathway of these ions into the waters of the park. However, anthropogenic sources can be related to farming, mining, and urban land use. In other systems, there is good evidence these ions can have strong impacts on macroinvertebrate communities and other aspects of stream condition.
+
+
+#### Metals
+**Metals in sediment** are of greater ecological relevancy than when in water, given longer residence time in streams and rivers. Sediment moves more slowly in and out of a stream system, and contamination in sediment may therefore have longer lasting and greater effects on aquatic life and can have serious human health impacts. Mercury is especially toxic to aquatic life and can cause serious drinking water issues.
+
+**Arsenic, cadmium, copper, zinc, and mercury** occur naturally in most soils and bedrock in and around Glacier National Park. Natural emissions of these metals can occur via forest fires and rock weathering. There are limited examples of known human sources of metals in and around Glacier. Perhaps the most well-known are the East Kootenay coalfields that underlie the Canadian headwaters of the North Fork of the Flathead River. This has been an area of active mineral exploration over the years, with several coal and coalbed methane developments proposed during the early 2000s. Coal and coalbed methane development in these basins would negatively affect water quality of the North Fork by increasing concentrations of suspended sediment, nutrients, and metals in the river.
+The State of Montana has designated sediment quality guidelines (i.e., not regulatory criteria) on sediment metals concentrations. These are based on research that developed a unifying synthesis across multiple published studies of 28 chemical substances and the broad spectrum of sediment quality guidelines for these in aquatic systems. **Threshold Effects Concentrations (TEC) was one of two classes of criteria developed for this study, and is described as a threshold “below which adverse effects are not expected”.**
+
+
+#### Physiochemistry
+**Dissolved oxygen (DO)** is the amount of oxygen in solution measured as either a percentage or in mg/L. DO is closely linked to physical and biological processes within streams and is necessary for the survival of many aquatic organisms. DO is created and depleted by chemical and biological processes and via atmospheric exchange driven by turbulence in rapids and riffles. High oxygen levels are especially critical for the metabolism of aquatic insects and salmonid eggs. Dissolved oxygen is important to park management because, as just one example, it can impact fish range and habitat quality.
+The **State of Montana establishes a minimum instantaneous DO concentration of 8.0 mg/L** for early life stages of salmonids (including trout) in class A-1 and Outstanding Resource Water (ORW) streams, Including Glacier National Park. Lowered condition of the stream correlates with lowered DO concentrations.
+
+**pH** indicates how acidic or basic a fluid is, with the midpoint 7 being neutral. pH has many important physical and biological effects in aquatic systems. Because most aquatic species occur within specific habitat envelopes of pH conditions based on their physiology, changes in pH affect their physiological tolerances and thus may ultimately result in changes in species assemblages. pH determines the solubility and biological availability of many nutrients and heavy metals in water. For instance, most metals become more soluble at lower pH levels, and some of those become toxic to aquatic organisms.
+
+The State of Montana establishes standards for pH in ORW waters. The standards indicate that any induced (i.e., anthropogenic) variation of pH within the range of 6.5 to 8.5 must be less than 0.5 pH units, and that natural pH outside this range must be maintained without change. In addition, natural pH above 7.0 must be maintained above 7.0. **We use 6.5 and 8.5 as lower and upper assessment points.**
+
+**Alkalinity** measures the capacity of water to neutralize acid. Natural levels of alkalinity are important because they protect or buffer against rapid pH changes, which can be harmful to aquatic life. In excess, it can also result in a range of effects, including hard water, ammonia toxicity, and algal blooms. We measure alkalinity as the concentration of calcium carbonate (CaCO~3~). Sources for these ions are generally natural, including carbonate rocks (i.e., limestone) and reactions in stream catchments when ions in water exchange with those electrostatically bound to a solid, like a clay particle (e.g., the same process as used in household water softeners that removes ions). Some wastewater contains high levels of carbonates from cleaning agents and food residue—possible in the park from localized visitor use of streams but likely of small impact.
+
+We use the **EPA’s recommended level of 10 mg/ as a lower assessment point**. Levels below 10 mg/L indicate that the system is poorly buffered and can be susceptible to changes in pH from natural and/or human-caused sources.
+
+
+#### Nutrients
+Nutrients, primarily **nitrogen**, **phosphorous**, and carbon, are essential for stream ecological function. Total nitrogen and phosphorous have been shown for decades to limit productivity in streams, whereas carbon is almost never limiting. However, elevated concentrations of nitrogen and/or phosphorous can result in eutrophication, which can cause a variety of problems, including degradation of ecosystem integrity and recreational activities, and impacts to human health. Nutrients can be important stressors on aquatic systems. Both natural and anthropogenic drivers affect nutrient concentrations in streams. Natural contributors of nutrients to streams include geology, soil, groundwater, and in situ production. Human activities can accelerate eutrophication via atmospheric deposition, agricultural and urban runoff, leaking septic systems, and sewage discharges.
+Montana DEQ has developed nutrient criteria for total N and P and an integrated assessment that are unique and may have relevance for use by Glacier. These values are **0.325 and 0.025 mg/L, respectively**. They are specific to summer months (July to September) when stream ecosystems are often most stressed due to low flow conditions and elevated temperature. This varies by ecoregion.
+
+ 
+
+#### Macroinvertebrates
+Macroinvertebrates and algae are the base of the food web and thus support a broad range of other species, including fish. They are excellent indicators of ecological integrity because of their ability to integrate different processes and because they respond to physical, chemical, and biological disturbances at multiple temporal and spatial scales.
+The **Hilsenhoff Biotic Index (HBI)**  uses scores for taxa developed over time that estimate a tolerance to organic nutrient pollution. Taxa are assigned a tolerance number from 0 to 10, where 0 is most sensitive and 10 is most tolerant.
+
+For the HBI, Montana DEQ derived a **threshold in HBI at 4.0**, where analysis showed that this value would correspond with statistically significant changes in nutrient concentrations
+
+Diversity in macroinvertebrate samples is depicted in several well-known indices:
+
+• **Shannon’s Diversity** is a widely used index that represents the amount of uncertainty in the species of a random choice in the community. At 0, the community is not diverse with only one species. Diversity increases as the index approaches a max value based on the species richness.
+
+• **Simpson’s Diversity** is an alternate metric of diversity which measures the probability that two randomly selected individuals in the community will be the same species. A value of 1 has no diversity, and values closer to 0 is greatly diverse.
+
+• **Pielou’s Evenness**, also known as the Shannon Equitability Index, measures how evenly species are distributed. It divides the Shannon diversity metric by the maximum potential value for a community of that richness. An index of 1 is a community with equal richness across species, and numbers closer to 0 represent unequal proportions of individuals in different species.
+
+# `r streamgages$equisName[1]`
+
+```{r , include = F}
+i<-1
+streamgages$equisName[i]
+streamgages$GageID[i]
+streamgages$Site[i]
+
+### Filter macros data to site
+metrics_dated_site<-metrics_dated %>% filter(SiteAlias %in% streamgages$equisName[i])
+
+### Read in gage data
+gage_data <- get_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+### Read in gage temp data
+gage_temp_data <- get_temp_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+
+### Separate Daily data
+Daily <- gage_data$Daily 
+Daily$Date<- as.POSIXct(as.character(Daily$Date))
+
+### Find Daily data by year peaks
+daily_peaks<- Daily %>%
+    group_by(Year) %>%
+    slice(which.max(Q))
+```
+
+## Column {width="20%"}
+
+### Row description {height="65%"}
+
+::: {.card title="Summary -- DRAFT"}
+• The North Fork Flathead River Glacier Rim Site is an area heavily used by park visitors for recreation. It is also where the river leaves the park, which provides additional data as it integrates with other nearby rivers and can reflect conditions across the watershed. 
+
+• This site was sampled in 2009 in a spatially extensive ROMN streams survey, then was added as a sentinel site that is sampled annually beginning in 2019.  
+
+• The site did not frequently exceed thresholds or deviate from pattern in major ions, metals, or physiochemistry analytes.
+
+• Total Phosphorous exceeded the MTDEQ threshold several times in the past five years. These events may be linked to sampling at high flow.
+
+• Hilsenhoff Biotic Index seemingly increased between two sampling periods (pre-2010 vs post 2020). Although more data collection can confirm this trend, it suggests that the stream condition has degraded allowing pollution tolerant taxa to increase in population relative to non-tolerant species.
+
+• In stream temperature, we find that maximum daily water temperature throughout July-November has exceeded the optimal range for Bull Trout spawning, and we are seeing more exceedances over time.
+
+
+:::
+
+
+### Row Map {height="35%"}
+
+```{r}
+map_leaflet(locations, locations$Lat[i], locations$Lon[i], zoom = 10)
+```
+
+## Column {width="45%"}
+
+### Row site images {height="25%"}
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+knitr::include_graphics('../images/sites/GLAC_013_2021 (3)_resize.jpg')
+```
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+knitr::include_graphics('../images/sites/GLAC_013_20241001_downstream_cropped_resize.jpg')
+```
+
+### Row {height="75%"}
+
+#### tabset {.tabset}
+
+##### Major ions
+
+```{r}
+#  obtain 
+# 'Calcium','Magnesium',
+# 'Sodium','Sulfate', 
+# 'Chloride','Potassium'
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Calcium','Magnesium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Calcium','Magnesium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Sodium','Sulfate'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Chloride','Potassium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')+
+  
+  guides(fill = guide_legend(byrow = TRUE))
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Metals
+
+```{r}
+# WQP_ROMN_SEI
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Arsenic', 'Cadmium', 
+                                    'Copper', 'Mercury', 
+                                    'Zinc'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  
+  ylim(0, max((SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')))$Lab_Reported_Result, na.rm=T))+ 
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  
+  geom_hline(aes(yintercept=121,color='Zinc upper threshold: 121'), # ZINC AP: 121
+             linetype='dashed')+
+  
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),#adjust spacing between legends of different mappings (shape, colour)
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+maps <- data.frame(yintercept=c(31.6, 9.79), group=c('Copper upper threshold: 31.6',
+                                                     'Arsenic upper threshold: 9.79'))
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  
+  ylim(0, max((SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')))$Lab_Reported_Result, na.rm=T))+ 
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),#adjust spacing between legends of different mappings (shape, colour)
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+maps <- data.frame(yintercept=c(0.18, 0.99), group=c('Mercury upper threshold: 0.18',
+                                                     'Cadmium upper threshold: 0.99'))
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  
+  ylim(0,max((SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')))$Lab_Reported_Result, na.rm=T))+ 
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"), #adjust spacing between legends of different mappings (shape, colour)
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  geom_line(colour = 'dodgerblue')+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Physiochemistry
+```{r}
+analyte <- c("Dissolved oxygen (DO)","pH","Alkalinity, carbonate")
+
+# DO ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[1],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(aes(yintercept=8,color='MTDEQ DO lower threshold: 8'),
+             linetype='dashed')+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date', color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# pH ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[2],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('pH')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_hline(aes(yintercept=6.5,color='pH lower threshold: 6.5'),
+             linetype='dashed')+
+  geom_hline(aes(yintercept=8.5,color='pH upper threshold: 8.5'),
+             linetype='dashed')+
+  scale_color_manual(values = c("darkgreen", "forestgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# Alkalinity ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[3],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c("Alkalinity, carbonate")), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_hline(aes(yintercept=10,color='EPA lower threshold: 10'),
+             linetype='dashed')+
+  # geom_hline(aes(yintercept=144,color='ROMN upper threshold: 144'),
+  #            linetype='dashed')+
+  scale_color_manual(values = c("tan3", "tan1", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+  
+  
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Nutrients
+```{r}
+analyte <- c('Nitrogen','Total Phosphorus, mixed forms')
+units <- c('(mg/L)','(mg/L)')
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte,
+         Filtered_Fraction == 'Total',
+         Result_Status %in% c('Accepted', 'Validated'))
+
+labsrange <- calc_labsrange(SEICHEM)
+a1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% analyte[1]),
+  aes(y = Lab_Reported_Result, x = Start_Date, shape = Detection_Condition)) + 
+  geom_point(size = 2, colour = 'darkgreen')+
+  labs(y = expression(mg/L), x = 'Date',
+       color = '', shape = '')+
+  geom_point(data = SEICHEM %>% filter(Characteristic_Name %in% analyte[2]), 
+             aes(y = Lab_Reported_Result*2.5), 
+             colour = 'tan3',size = 2)+
+  scale_y_continuous(name = paste(analyte[1], units[1]),
+                     sec.axis = sec_axis(~./2.5, 
+                                         name = paste(analyte[2], units[2])))+
+  scale_shape_manual(values = c(20,8,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_hline(yintercept=0.325,color='darkgreen',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.325, label = "MTDEQ Threshold", vjust = 1.5, size = 3)+
+  geom_hline(yintercept=0.025,color='tan3',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.025, label = "MTDEQ Threshold", vjust = -0.8, size = 3)+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  theme(
+    axis.title.y = element_text(color = 'darkgreen', size=13),
+    axis.title.y.right = element_text(color = 'tan3', size=13)
+  )
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, a1, align = "v", nrow = 2, rel_heights = c(1/4, 3/4))
+
+```
+
+
+##### Macroinvertebrates
+
+```{r}
+pm <- plot_macros(metrics_dated_site)
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(metrics_dated_site$StartDate, na.rm = T) & Date < max(metrics_dated_site$StartDate, na.rm = T)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(metrics_dated_site$StartDate),max(metrics_dated_site$StartDate))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, pm, align = "v", nrow = 2, rel_heights = c(1/5, 4/5))
+
+```
+
+
+## Column {width="25%"}
+
+### Hydro tabset {.tabset}
+
+#### `r gage_data$EndYear -0`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -0, gage_data, streamgages$hydromax[i])
+
+plot_temp(gage_data$EndYear -0, gage_temp_data)
+# plot_logger(gage_data$EndYear -0,streamgages$loggercsv[i]) 
+```
+
+
+#### `r gage_data$EndYear -1`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -1, gage_data, streamgages$hydromax[i])
+
+plot_temp(gage_data$EndYear -1, gage_temp_data)
+# plot_logger(gage_data$EndYear -1,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -2`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -2, gage_data, streamgages$hydromax[i])
+plot_temp(gage_data$EndYear -2, gage_temp_data)
+# plot_logger(gage_data$EndYear -2,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -3`
+
+```{r , results= T}
+plot_hydrograph(gage_data$EndYear -3, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -3, gage_temp_data)
+plot_logger(gage_data$EndYear -3,streamgages$loggercsv[i])
+
+```
+
+#### `r gage_data$EndYear -4`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -4, gage_data, streamgages$hydromax[i])
+plot_temp(gage_data$EndYear -4, gage_temp_data)
+# plot_logger(gage_data$EndYear -4,streamgages$loggercsv[i]) 
+```
+
+# `r streamgages$equisName[2]`
+
+```{r , include = F}
+i<-2
+streamgages$equisName[i]
+streamgages$GageID[i]
+streamgages$Site[i]
+
+### Filter macros data to site
+metrics_dated_site<-metrics_dated %>% filter(SiteAlias %in% streamgages$equisName[i])
+
+### Read in gage data
+gage_data <- get_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+### Read in gage temp data
+gage_temp_data <- get_temp_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+
+### Separate Daily data
+Daily <- gage_data$Daily 
+Daily$Date<- as.POSIXct(as.character(Daily$Date))
+
+### Find Daily data by year peaks
+daily_peaks<- Daily %>%
+    group_by(Year) %>%
+    slice(which.max(Q))
+```
+
+## Column {width="20%"}
+
+### Row description {height="65%"}
+
+::: {.card title="Summary -- DRAFT"}
+• The North Fork Flathead River Border Site is where the river enters the U.S. from Canada. It is experiencing pressure from increasing road development and timber harvest.
+
+• Chloride deviates from past behavior beginning in 2018 and is slightly higher than before though this coincides with a change in chemistry labs.
+
+• Most metals stayed below assessment thresholds, though we notice that a change in labs coincides with a decrease in concentrations. Arsenic rose above the threshold after peak flows in 2012 and 2014.
+
+• pH surpassed the MTDEQ thresholds around 2013-2017, where pH reached acidity above 8.5 between each peak flow. This change in pattern in 2013 also exceeded the MTDEQ standard for variation of less than 0.5.
+
+• Total phosphorous frequently exceeds the MTDEQ threshold at this site since 2010.
+
+• For macroinvertebrates, we see a clear increase in the Shannon Diversity metric. Disturbance can incur changes in the homogeneity of the stream ecology, where altered conditions allow for new species to thrive in the stream environment.
+
+• For stream temperature, maximum daily water temperature in July-November has exceeded the optimal range for Bull Trout spawning (10-14 °C), and this trend has intensified over time. Mean daily water temperature has remained within this range for the spawning season in August.
+
+
+:::
+
+
+### Row Map {height="35%"}
+
+```{r}
+map_leaflet(locations, locations$Lat[i], locations$Lon[i], zoom = 10)
+```
+
+## Column {width="45%"}
+
+### Row site images {height="25%"}
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+
+knitr::include_graphics('../images/sites/GLAC_022_2021 (3)_resize.jpg')
+```
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+
+knitr::include_graphics('../images/sites/GLAC_022_20241001_upstream_cropped_resize.jpg')
+```
+
+
+### Row {height="75%"}
+
+#### tabset {.tabset}
+
+##### Major ions
+
+```{r}
+#  obtain 
+# 'Calcium','Magnesium',
+# 'Sodium','Sulfate', 
+# 'Chloride','Potassium'
+
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Calcium','Magnesium',
+                                    'Sodium','Sulfate', 
+                                    'Chloride','Potassium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Calcium','Magnesium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Calcium','Magnesium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Sodium','Sulfate'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Chloride','Potassium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM_all$Start_Date) & Date < max(SEICHEM_all$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')+
+  
+  guides(fill = guide_legend(byrow = TRUE))
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Metals
+
+```{r}
+
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Arsenic', 'Cadmium', 
+                                    'Copper', 'Mercury', 
+                                    'Zinc'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Zinc'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0, max((SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(aes(yintercept=121,color='Zinc upper threshold: 121'), # ZINC AP: 121
+             linetype='dashed')+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+maps <- data.frame(yintercept=c(31.6, 9.79), group=c('Copper upper threshold: 31.6',
+                                                     'Arsenic upper threshold: 9.79'))
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Copper','Arsenic'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0,
+       max((SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+maps <- data.frame(yintercept=c(0.18, 0.99), group=c('Mercury upper threshold: 0.18',
+                                                     'Cadmium upper threshold: 0.99'))
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Mercury','Cadmium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0,
+       max((SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Physiochemistry
+```{r}
+analyte <- c("Dissolved oxygen (DO)","pH","Alkalinity, carbonate")
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte,
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+# DO ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[1],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(aes(yintercept=8,color='MTDEQ DO lower threshold: 8'),
+             linetype='dashed')+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date', color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# pH ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[2],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('pH')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  geom_hline(aes(yintercept=6.5,color='pH lower threshold: 6.5'),
+             linetype='dashed')+
+  geom_hline(aes(yintercept=8.5,color='pH upper threshold: 8.5'),
+             linetype='dashed')+
+  scale_color_manual(values = c("darkgreen", "forestgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# Alkalinity ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[3],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c("Alkalinity, carbonate")), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  geom_hline(aes(yintercept=10,color='EPA lower threshold: 10'),
+             linetype='dashed')+
+  # geom_hline(aes(yintercept=144,color='ROMN upper threshold: 144'),
+  #            linetype='dashed')+
+  scale_color_manual(values = c("tan3", "tan1", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+  
+  
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Nutrients
+```{r}
+analyte <- c('Nitrogen','Total Phosphorus, mixed forms')
+units <- c('(mg/L)','(mg/L)')
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte,
+         Filtered_Fraction == 'Total',
+         Result_Status %in% c('Accepted', 'Validated'))
+
+labsrange <- calc_labsrange(SEICHEM)
+a1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% analyte[1]),
+  aes(y = Lab_Reported_Result, x = Start_Date, shape = Detection_Condition)) + 
+  geom_point(size = 2, colour = 'darkgreen')+
+  labs(y = expression(mg/L), x = 'Date',
+       color = '', shape = '')+
+  geom_point(data = SEICHEM %>% filter(Characteristic_Name %in% analyte[2]), 
+             aes(y = Lab_Reported_Result*2.5), 
+             colour = 'tan3',size = 2)+
+  scale_y_continuous(name = paste(analyte[1], units[1]),
+                     sec.axis = sec_axis(~./2.5, 
+                                         name = paste(analyte[2], units[2])))+
+  scale_shape_manual(values = c(20,8,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_hline(yintercept=0.325,color='darkgreen',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.325, label = "MTDEQ Threshold", vjust = 1.5, size = 3)+
+  geom_hline(yintercept=0.025,color='tan3',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.025, label = "MTDEQ Threshold", vjust = -0.8, size = 3)+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  theme(
+    axis.title.y = element_text(color = 'darkgreen', size=13),
+    axis.title.y.right = element_text(color = 'tan3', size=13)
+  )
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, a1, align = "v", nrow = 2, rel_heights = c(1/4, 3/4))
+
+```
+
+
+##### Macroinvertebrates
+
+```{r}
+pm <- plot_macros(metrics_dated_site)
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(metrics_dated_site$StartDate, na.rm = T) & Date < max(metrics_dated_site$StartDate, na.rm = T)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(metrics_dated_site$StartDate),max(metrics_dated_site$StartDate))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, pm, align = "v", nrow = 2, rel_heights = c(1/5, 4/5))
+
+```
+
+
+## Column {width="25%"}
+
+### Hydro tabset {.tabset}
+
+#### `r gage_data$EndYear -0`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -0, gage_data, streamgages$hydromax[i])
+
+plot_temp(gage_data$EndYear -0, gage_temp_data)
+# plot_logger(gage_data$EndYear -0,streamgages$loggercsv[i]) 
+```
+
+
+#### `r gage_data$EndYear -1`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -1, gage_data, streamgages$hydromax[i])
+
+plot_temp(gage_data$EndYear -1, gage_temp_data)
+# plot_logger(gage_data$EndYear -1,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -2`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -2, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -2, gage_temp_data)
+plot_logger(gage_data$EndYear -2,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -3`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -3, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -3, gage_temp_data)
+plot_logger(gage_data$EndYear -3,streamgages$loggercsv[i]) 
+
+```
+
+#### `r gage_data$EndYear -4`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -4, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -4, gage_temp_data)
+plot_logger(gage_data$EndYear -4,streamgages$loggercsv[i]) 
+```
+
+# `r streamgages$equisName[3]`
+
+```{r , include = F}
+i<-3
+streamgages$equisName[i]
+streamgages$GageID[i]
+streamgages$Site[i]
+
+### Filter macros data to site
+metrics_dated_site<-metrics_dated %>% filter(SiteAlias %in% streamgages$equisName[i])
+
+### Read in gage data
+gage_data <- get_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+### Read in gage temp data
+gage_temp_data <- get_temp_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+
+### Separate Daily data
+Daily <- gage_data$Daily 
+Daily$Date<- as.POSIXct(as.character(Daily$Date))
+
+### Find Daily data by year peaks
+daily_peaks<- Daily %>%
+    group_by(Year) %>%
+    slice(which.max(Q))
+```
+
+## Column {width="20%"}
+
+### Row description {height="65%"}
+
+::: {.card title="Summary -- DRAFT"}
+• The Swiftcurrent Creek site is near a campground, and beaver activity has influenced the channel over time. This stream is not classified as Wild and Scenic, and is a much smaller stream than the others depicted in this dashboard.
+
+• We see a slightly increasing trend in most major ions. In Chloride, the trend includes an increase in variance, but this could be related to the change in chemistry labs.
+
+• pH drops over the 2015-2020 period, becoming slightly more acidic, though staying above MTDEQ standard of 6.5. It also shows strong variation since 2012.
+
+• There are only a few exceedances of nitrogen and phosphorous measures outside of assessment thresholds.
+
+• Hilsenhoff Biotic Index and Shannon Diversity for macroinvertebrates show a slight increase over time, indicating that the population of macroinvertebrates at the site is gradually diversifying into a community that is more tolerant of pollutants.
+
+• In stream temperature at this site, we find that daily water temperature throughout July-November can exceed the optimal range for Bull Trout spawning in some years, and especially in recent years. Both mean and maximum daily temperature would be in exceedance of this assessment threshold in “hot” years.
+
+
+
+:::
+
+
+### Row Map {height="35%"}
+
+```{r}
+map_leaflet(locations, locations$Lat[i], locations$Lon[i], zoom = 10)
+```
+
+## Column {width="45%"}
+
+### Row site images {height="25%"}
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+
+knitr::include_graphics('../images/sites/GLAC_S01_June_2022_downstream_orS06_cropped_resize.jpg')
+```
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+
+knitr::include_graphics('../images/sites/GLAC_S01_20240820_downstream_cropped_resize.jpg')
+```
+
+
+### Row {height="75%"}
+
+#### tabset {.tabset}
+
+##### Major ions
+
+```{r}
+#  obtain 
+# 'Calcium','Magnesium',
+# 'Sodium','Sulfate', 
+# 'Chloride','Potassium'
+
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Calcium','Magnesium',
+                                    'Sodium','Sulfate', 
+                                    'Chloride','Potassium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Calcium','Magnesium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Calcium','Magnesium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Sodium','Sulfate'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Chloride','Potassium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM_all$Start_Date) & Date < max(SEICHEM_all$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')+
+  
+  guides(fill = guide_legend(byrow = TRUE))
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Metals
+
+```{r}
+
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Arsenic', 'Cadmium', 
+                                    'Copper', 'Mercury', 
+                                    'Zinc'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Zinc'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0, max((SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(aes(yintercept=121,color='Zinc upper threshold: 121'), # ZINC AP: 121
+             linetype='dashed')+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+maps <- data.frame(yintercept=c(31.6, 9.79), group=c('Copper upper threshold: 31.6',
+                                                     'Arsenic upper threshold: 9.79'))
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Copper','Arsenic'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0,
+       max((SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+maps <- data.frame(yintercept=c(0.18, 0.99), group=c('Mercury upper threshold: 0.18',
+                                                     'Cadmium upper threshold: 0.99'))
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Mercury','Cadmium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0,
+       max((SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Physiochemistry
+```{r}
+analyte <- c("Dissolved oxygen (DO)","pH","Alkalinity, carbonate")
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte,
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+# DO ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[1],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(aes(yintercept=8,color='MTDEQ DO lower threshold: 8'),
+             linetype='dashed')+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date', color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# pH ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[2],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('pH')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  geom_hline(aes(yintercept=6.5,color='pH lower threshold: 6.5'),
+             linetype='dashed')+
+  geom_hline(aes(yintercept=8.5,color='pH upper threshold: 8.5'),
+             linetype='dashed')+
+  scale_color_manual(values = c("darkgreen", "forestgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# Alkalinity ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[3],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c("Alkalinity, carbonate")), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  geom_hline(aes(yintercept=10,color='EPA lower threshold: 10'),
+             linetype='dashed')+
+  # geom_hline(aes(yintercept=144,color='ROMN upper threshold: 144'),
+  #            linetype='dashed')+
+  scale_color_manual(values = c("tan3", "tan1", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+  
+  
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Nutrients
+```{r}
+analyte <- c('Nitrogen','Total Phosphorus, mixed forms')
+units <- c('(mg/L)','(mg/L)')
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte,
+         Filtered_Fraction == 'Total',
+         Result_Status %in% c('Accepted', 'Validated'))
+
+labsrange <- calc_labsrange(SEICHEM)
+a1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% analyte[1]),
+  aes(y = Lab_Reported_Result, x = Start_Date, shape = Detection_Condition)) + 
+  geom_point(size = 2, colour = 'darkgreen')+
+  labs(y = expression(mg/L), x = 'Date',
+       color = '', shape = '')+
+  geom_point(data = SEICHEM %>% filter(Characteristic_Name %in% analyte[2]), 
+             aes(y = Lab_Reported_Result*2.5), 
+             colour = 'tan3',size = 2)+
+  scale_y_continuous(name = paste(analyte[1], units[1]),
+                     sec.axis = sec_axis(~./2.5, 
+                                         name = paste(analyte[2], units[2])))+
+  scale_shape_manual(values = c(20,8,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_hline(yintercept=0.325,color='darkgreen',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.325, label = "MTDEQ Threshold", vjust = 1.5, size = 3)+
+  geom_hline(yintercept=0.025,color='tan3',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.025, label = "MTDEQ Threshold", vjust = -0.8, size = 3)+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  theme(
+    axis.title.y = element_text(color = 'darkgreen', size=13),
+    axis.title.y.right = element_text(color = 'tan3', size=13)
+  )
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, a1, align = "v", nrow = 2, rel_heights = c(1/4, 3/4))
+
+```
+
+
+##### Macroinvertebrates
+
+```{r}
+pm <- plot_macros(metrics_dated_site)
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(metrics_dated_site$StartDate, na.rm = T) & Date < max(metrics_dated_site$StartDate, na.rm = T)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(metrics_dated_site$StartDate),max(metrics_dated_site$StartDate))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, pm, align = "v", nrow = 2, rel_heights = c(1/5, 4/5))
+
+```
+
+
+## Column {width="25%"}
+
+### Hydro tabset {.tabset}
+
+#### `r gage_data$EndYear -0`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -0, gage_data, streamgages$hydromax[i])
+
+# plot_temp(gage_data$EndYear -0, gage_temp_data)
+plot_logger(gage_data$EndYear -0,streamgages$loggercsv[i]) 
+```
+
+
+#### `r gage_data$EndYear -1`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -1, gage_data, streamgages$hydromax[i])
+
+# plot_temp(gage_data$EndYear -1, gage_temp_data)
+plot_logger(gage_data$EndYear -1,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -2`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -2, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -2, gage_temp_data)
+plot_logger(gage_data$EndYear -2,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -3`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -3, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -3, gage_temp_data)
+plot_logger(gage_data$EndYear -3,streamgages$loggercsv[i]) 
+
+```
+
+#### `r gage_data$EndYear -4`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -4, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -4, gage_temp_data)
+plot_logger(gage_data$EndYear -4,streamgages$loggercsv[i]) 
+```
+
+# `r streamgages$equisName[4]`
+
+```{r , include = F}
+i<-4
+streamgages$equisName[i]
+streamgages$GageID[i]
+streamgages$Site[i]
+
+### Filter macros data to site
+metrics_dated_site<-metrics_dated %>% filter(SiteAlias %in% streamgages$equisName[i])
+
+### Read in gage data
+gage_data <- get_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+### Read in gage temp data
+gage_temp_data <- get_temp_gage_data(streamgages |> filter(Site ==streamgages$Site[i]))
+
+### Separate Daily data
+Daily <- gage_data$Daily 
+Daily$Date<- as.POSIXct(as.character(Daily$Date))
+
+### Find Daily data by year peaks
+daily_peaks<- Daily %>%
+    group_by(Year) %>%
+    slice(which.max(Q))
+```
+
+## Column {width="20%"}
+
+### Row description {height="65%"}
+
+::: {.card title="Summary -- DRAFT"}
+• The Lower Middle Fork Flathead River site is near the south border of the park, which provides additional data as it integrates with other nearby rivers and can reflect conditions across the watershed. It is also downstream of a private golf course.
+
+• Ions, metals, physiochemistry and nutrients remained within assessment thresholds and did not display qualitative changes in patterns.
+
+• Hilsenhoff Biotic Index consistently exceeds the MTDEQ threshold at this site. This suggests that the assemblage of macroinvertebrates at this site continues to be one that is tolerant of nutrient pollution.
+
+• At this site, we find that daily water temperature throughout July-November has exceeded the optimal range for Bull Trout spawning in years of record. However, water temperature data through gages or loggers is limited.
+
+
+
+:::
+
+
+### Row Map {height="35%"}
+
+```{r}
+map_leaflet(locations, locations$Lat[i], locations$Lon[i], zoom = 10)
+```
+
+## Column {width="45%"}
+
+### Row site images {height="25%"}
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+
+knitr::include_graphics('../images/sites/GLAC_S06_20241001_upstream_cropped_resize.jpg')
+```
+
+```{r echo=FALSE, fig.cap="", out.width="350px"}
+
+knitr::include_graphics('../images/sites/GLAC_S06_2021 (3)_resize.jpg')
+```
+
+
+### Row {height="75%"}
+
+#### tabset {.tabset}
+
+##### Major ions
+
+```{r}
+#  obtain 
+# 'Calcium','Magnesium',
+# 'Sodium','Sulfate', 
+# 'Chloride','Potassium'
+
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Calcium','Magnesium',
+                                    'Sodium','Sulfate', 
+                                    'Chloride','Potassium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Calcium','Magnesium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Calcium','Magnesium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Sodium','Sulfate'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Chloride','Potassium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Filtered_Fraction == 'Dissolved')
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  
+  geom_point(size = 2)+
+  
+  xlim(analyte_xlim)+
+  ylim(0,NA)+
+  
+  scale_color_manual(values = c("tan3", "darkgreen"))+
+  scale_shape_manual(values = c(20,8),
+                     breaks = c('Detected And Quantified','Not Detected'))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = 'mg/L', x = 'Date',
+       colour='Major Ion\n(Dissolved in Water)',
+       shape = "")+
+  
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM_all$Start_Date) & Date < max(SEICHEM_all$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')+
+  
+  guides(fill = guide_legend(byrow = TRUE))
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Metals
+
+```{r}
+
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Arsenic', 'Cadmium', 
+                                    'Copper', 'Mercury', 
+                                    'Zinc'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Zinc'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0, max((SEICHEM %>% filter(Characteristic_Name %in% c('Zinc')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(aes(yintercept=121,color='Zinc upper threshold: 121'), # ZINC AP: 121
+             linetype='dashed')+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+maps <- data.frame(yintercept=c(31.6, 9.79), group=c('Copper upper threshold: 31.6',
+                                                     'Arsenic upper threshold: 9.79'))
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Copper','Arsenic'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0,
+       max((SEICHEM %>% filter(Characteristic_Name %in% c('Copper','Arsenic')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+maps <- data.frame(yintercept=c(0.18, 0.99), group=c('Mercury upper threshold: 0.18',
+                                                     'Cadmium upper threshold: 0.99'))
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% c('Mercury','Cadmium'),
+         Result_Status %in% c('Accepted', 'Validated'),
+         Medium == 'SEDIMENT',
+         Filtered_Fraction == 'Total')
+labsrange <- calc_labsrange(SEICHEM)
+
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  ylim(0,
+       max((SEICHEM %>% filter(Characteristic_Name %in% c('Mercury','Cadmium')))$Lab_Reported_Result, na.rm=T)
+       )+ 
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1", "darkgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(data = maps, aes(yintercept = yintercept, color = group),
+             linetype = 'dashed', show.legend = T)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mu*g/kg), x = 'Date', colour='Metal in Sediment',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Physiochemistry
+```{r}
+analyte <- c("Dissolved oxygen (DO)","pH","Alkalinity, carbonate")
+SEICHEM_all <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte,
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+analyte_xlim <- c(min(SEICHEM_all$Start_Date),max(SEICHEM_all$Start_Date))
+
+# DO ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[1],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p1<- ggplot(
+  SEICHEM, 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  scale_color_manual(values = c("tan3", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_hline(aes(yintercept=8,color='MTDEQ DO lower threshold: 8'),
+             linetype='dashed')+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date', color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# pH ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[2],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p2<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c('pH')), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  geom_hline(aes(yintercept=6.5,color='pH lower threshold: 6.5'),
+             linetype='dashed')+
+  geom_hline(aes(yintercept=8.5,color='pH upper threshold: 8.5'),
+             linetype='dashed')+
+  scale_color_manual(values = c("darkgreen", "forestgreen","forestgreen"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+
+# Alkalinity ####
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte[3],
+         Result_Status %in% c('Accepted', 'Validated'))%>%
+  mutate(Lab_ID = replace(Lab_ID, Lab_ID == 'NULL', 'In-Situ'))
+
+labsrange <- calc_labsrange(SEICHEM)
+p3<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% c("Alkalinity, carbonate")), 
+  aes(y = Lab_Reported_Result, x = Start_Date, colour = Characteristic_Name, shape = Detection_Condition)) + 
+  geom_point(size = 2)+
+  xlim(analyte_xlim)+
+  geom_hline(aes(yintercept=10,color='EPA lower threshold: 10'),
+             linetype='dashed')+
+  # geom_hline(aes(yintercept=144,color='ROMN upper threshold: 144'),
+  #            linetype='dashed')+
+  scale_color_manual(values = c("tan3", "tan1", "tan1"))+
+  scale_shape_manual(values = c(20,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  
+    geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  labs(y = expression(mg/L), x = 'Date',color = '',
+       shape = "")+
+  theme(legend.key.size = unit(0.25, 'cm'), #change legend key size
+        legend.key.height = unit(0.35, 'cm'), #change legend key height
+        legend.spacing.y = unit(-0.25, "cm"),
+        legend.key.width = unit(0.25, 'cm'), #change legend key width
+        legend.title = element_text(size=10), #change legend title font size
+        legend.text = element_text(size=8))+ #change legend text font size
+  guides(colour = guide_legend(order = 1), 
+          shape = guide_legend(order = 2))
+  
+  
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(analyte_xlim)+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, p1,p2,p3, align = "v", nrow = 4, rel_heights = c(1.9/10, 2.7/10,2.7/10,2.7/10))
+```
+
+##### Nutrients
+```{r}
+analyte <- c('Nitrogen','Total Phosphorus, mixed forms')
+units <- c('(mg/L)','(mg/L)')
+SEICHEM <- wchem2 %>% 
+  filter(Station_Name %in% streamgages$equisName[i],
+         Characteristic_Name %in% analyte,
+         Filtered_Fraction == 'Total',
+         Result_Status %in% c('Accepted', 'Validated'))
+
+labsrange <- calc_labsrange(SEICHEM)
+a1<- ggplot(
+  SEICHEM %>% filter(Characteristic_Name %in% analyte[1]),
+  aes(y = Lab_Reported_Result, x = Start_Date, shape = Detection_Condition)) + 
+  geom_point(size = 2, colour = 'darkgreen')+
+  labs(y = expression(mg/L), x = 'Date',
+       color = '', shape = '')+
+  geom_point(data = SEICHEM %>% filter(Characteristic_Name %in% analyte[2]), 
+             aes(y = Lab_Reported_Result*2.5), 
+             colour = 'tan3',size = 2)+
+  scale_y_continuous(name = paste(analyte[1], units[1]),
+                     sec.axis = sec_axis(~./2.5, 
+                                         name = paste(analyte[2], units[2])))+
+  scale_shape_manual(values = c(20,8,8))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_hline(yintercept=0.325,color='darkgreen',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.325, label = "MTDEQ Threshold", vjust = 1.5, size = 3)+
+  geom_hline(yintercept=0.025,color='tan3',
+             linetype='dashed')+
+  annotate("text", x = mean(range(SEICHEM$Start_Date)), 
+           y = 0.025, label = "MTDEQ Threshold", vjust = -0.8, size = 3)+
+  
+  geom_vline(xintercept = labsrange$min_value, colour = 'grey2', alpha = 1, linetype = 'dotted')+
+  annotate("text", x = labsrange$min_value, 
+           y = labsrange$position, 
+           label = labsrange$Lab_ID, size = 2, alpha = 0.7)+
+  
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  theme(
+    axis.title.y = element_text(color = 'darkgreen', size=13),
+    axis.title.y.right = element_text(color = 'tan3', size=13)
+  )
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(SEICHEM$Start_Date) & Date < max(SEICHEM$Start_Date)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(SEICHEM$Start_Date),max(SEICHEM$Start_Date))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, a1, align = "v", nrow = 2, rel_heights = c(1/4, 3/4))
+
+```
+
+
+##### Macroinvertebrates
+
+```{r}
+pm <- plot_macros(metrics_dated_site)
+
+flow<- ggplot(
+  Daily %>% filter(Date > min(metrics_dated_site$StartDate, na.rm = T) & Date < max(metrics_dated_site$StartDate, na.rm = T)), 
+  aes(y= Q*35.314, x= Date)) + 
+  #geom_point()+
+  labs(y = 'Flow cf/s', x = '')+
+  xlim(min(metrics_dated_site$StartDate),max(metrics_dated_site$StartDate))+
+  geom_vline(xintercept = daily_peaks$Date,colour = 'grey', alpha = 0.5, linetype = 'dashed')+
+  geom_line(aes(y = Q*35.314), colour = 'dodgerblue')
+
+plot_grid(flow, pm, align = "v", nrow = 2, rel_heights = c(1/5, 4/5))
+
+```
+
+
+## Column {width="25%"}
+
+### Hydro tabset {.tabset}
+
+#### `r gage_data$EndYear -0`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -0, gage_data, streamgages$hydromax[i])
+
+plot_temp(gage_data$EndYear -0, gage_temp_data)
+# plot_logger(gage_data$EndYear -0,streamgages$loggercsv[i]) 
+```
+
+
+#### `r gage_data$EndYear -1`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -1, gage_data, streamgages$hydromax[i])
+
+plot_temp(gage_data$EndYear -1, gage_temp_data)
+# plot_logger(gage_data$EndYear -1,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -2`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -2, gage_data, streamgages$hydromax[i])
+plot_temp(gage_data$EndYear -2, gage_temp_data)
+# plot_logger(gage_data$EndYear -2,streamgages$loggercsv[i]) 
+```
+
+#### `r gage_data$EndYear -3`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -3, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -3, gage_temp_data)
+plot_logger(gage_data$EndYear -3,streamgages$loggercsv[i]) 
+
+```
+
+#### `r gage_data$EndYear -4`
+
+```{r , results= F}
+plot_hydrograph(gage_data$EndYear -4, gage_data, streamgages$hydromax[i])
+# plot_temp(gage_data$EndYear -4, gage_temp_data)
+plot_logger(gage_data$EndYear -4,streamgages$loggercsv[i]) 
+```

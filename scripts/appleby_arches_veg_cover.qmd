@@ -1,0 +1,268 @@
+---
+title: "Arches Vegetation Cover 2010-2023"
+author: "Christina Appleby"
+format: 
+  dashboard:
+    orientation: columns
+    embed-resources: true
+    theme: lumen_mh.scss
+    css: styles.css
+---
+
+```{r setup, include = F}
+
+knitr::opts_chunk$set(echo = FALSE, message = F, warning = F)
+options(knitr.duplicate.label = "allow")
+
+# Install any missing packages
+list.of.packages <- c('tidyverse',  'sf', 'leaflet', 'here', 'DT'
+                      )
+
+# Load packages
+lapply(list.of.packages, library, character.only = T)
+```
+
+```{r map leaflet setup}
+map_leaflet <- function(data, center_lat, center_long, zoom, basemap){
+  m = leaflet(data = data) %>%
+  setView(lat = center_lat, lng = center_long, zoom = zoom)
+  
+  if (basemap == "osm") {
+    m <- m %>%
+      addTiles(group = "OpenStreetMap")
+  } else {
+    m <- m %>%
+      addProviderTiles(
+        provider = "Esri.WorldImagery",
+        group = "ESRI World Imagery"
+      )
+  }
+
+  m <- m %>%
+  addPolylines(data = data,
+               weight = 3, color = "darkgreen") %>%
+  # addLayersControl(
+  #   baseGroups = c('OpenStreetMap', 'ESRI World Imagery')) %>%
+  addLegend(data = data,
+            position = 'bottomright',
+            colors =c('darkgreen'),
+            labels = c('Park boundary'),
+            title = "Legend",
+            opacity = 1)
+
+m
+}
+
+```
+
+```{r data import setup, include = F}
+
+### VEG DATA ###
+# https://irma.nps.gov/DataStore/Reference/Profile/2305079
+# Load plants lookup table
+tlu_plants <- read_csv(here('NCPN_IntegratedUplands_PlantsLookup.csv')) %>%
+  select(c(Master_Plant_Code, Master_Common_Name))
+
+# Load NCPN point-intercept data and filter for Arches National Park
+arches_veg <- read_csv(here('NCPN_IntegratedUplands_PointIntercept.csv')) %>%
+  filter(Unit_Code == 'ARCH')
+
+# Remove duplicate species at one point before counting. There are 100 points 
+# per transect, so the counts equals the percent cover.
+arches_counts <- arches_veg %>%
+  filter(!is.na(Scientific_Name), Status == 1) %>%
+  select(Visit_Year:Layer, Species, Scientific_Name) %>%
+  distinct(Visit_Year, Plot_ID, Transect, Point, Species, Scientific_Name) %>%
+  group_by(Visit_Year, Plot_ID, Species, Scientific_Name) %>%
+  dplyr::summarize(
+    Count = n(),
+    Cover_pct = round(Count / 300 * 100, 0),
+    .groups = "drop"
+  )
+
+# Calculate percent change for each species
+plots_veg_cover <- arches_counts %>%
+  group_by(Plot_ID, Species) %>%
+  summarize(
+    Max_cover = max(Cover_pct, na.rm = TRUE),
+    Min_cover = min(Cover_pct, na.rm = TRUE),
+    Change_cover = Max_cover - Min_cover,
+    .groups = 'drop'
+  )
+
+# Calculate total change for each plot and keep the top five
+plots_change <- plots_veg_cover %>%
+  group_by(Plot_ID) %>%
+  summarize(
+    Change_total = sum(Change_cover, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(Change_total)) %>%
+  slice_head(n = 5)
+
+arches_high_change <- arches_counts %>%
+  filter(Plot_ID %in% plots_change$Plot_ID) %>%
+  arrange(Plot_ID, Visit_Year)
+
+plot_trend <- arches_counts %>%
+  group_by(Plot_ID, Species, Scientific_Name) %>%
+  summarize(
+    First_yr_cover_pct = Cover_pct[Visit_Year == min(Visit_Year)],
+    Last_yr_cover_pct = Cover_pct[Visit_Year == max(Visit_Year)],
+    Cover_change = Last_yr_cover_pct - First_yr_cover_pct,
+    .groups = 'drop'
+  ) %>%
+  left_join(tlu_plants, by = join_by(Species == Master_Plant_Code))
+
+### NCPN PARK BOUNDARIES ###
+ncpn_units <-  st_read(here('data/NCPN_unit_boundaries/NCPN_unit_boundaries.shp')) %>% 
+  st_transform(crs = 4326)
+
+arches_boundary <- ncpn_units %>%
+  filter(UNIT_CODE == 'ARCH')
+
+```
+
+# Overview
+
+## Column intro {width='50%'}
+
+### Row summary {height='35%'}
+
+::: {.card title="NPS Inventory & Monitoring"}
+The [National Park Service Inventory & Monitoring Division (IMD)](https://www.nps.gov/im/index.htm) 
+consists of 32 networks that gather and analyze inventory and monitoring data, 
+and communicate key information on park resources. The monitoring data helps 
+park managers understand how the natural resources are changing over time, 
+enabling them to make science-based management decisions.
+
+Source: 
+Inventory and Monitoring Division (U.S. National Park Service). (n.d.). 
+Retrieved December 13, 2025, from [https://www.nps.gov/im/index.htm](https://www.nps.gov/im/index.htm)
+:::
+
+### Row ncpn {height='65%'}
+
+::: {.card title="Northern Colorado Plateau Network Uplands"}
+The Northern Colorado Plateau Network (NCPN) conducts monitoring 
+for 16 different park units. Upland Vegetation and Soils is considered a high 
+monitoring priority since most of land on the Colorado Plateau is upland 
+ecosystems. Upland areas include rock outcrops, shrublands, grasslands, 
+woodlands, forests, badlands, and subalpine meadows. Plant communities, exotic 
+invasive species, biological soil crusts, soil stability, and hydrologic 
+function are monitored in uplands ecosystems.
+
+Understanding how vegetation cover changes over time helps park managers to 
+detect shifts in plant communities, identify at-risk areas, and make informed 
+management decisions. This analysis quantifies vegetation cover trends at Arches
+National Park and provides an example of how upland vegetation monitoring can 
+provide information for resource management and conservation efforts.
+
+Sources: 
+Witwicki D, Thomas H, Weissinger R, Wight A, Topp S, Garman SL, Miller ME. 2017. Upland vegetation and soils monitoring protocol for park units in the Northern Colorado Plateau Network: version 1.07. Natural Resource Report. NPS/NCPN/NRR—2017/1570. National Park Service. Fort Collins, Colorado
+[https://irma.nps.gov/DataStore/Reference/Profile/2248124](https://irma.nps.gov/DataStore/Reference/Profile/2248124)
+
+Upland Vegetation and Soils (U.S. National Park Service). (n.d.). Retrieved 
+December 13, 2025, from [https://www.nps.gov/im/ncpn/uplands.htm](https://www.nps.gov/im/ncpn/uplands.htm)
+:::
+
+## Column ncpn map {width='50%'}
+
+```{r ncpn_map}
+cat("title= Map of NCPN Park Units") 
+
+map_leaflet(ncpn_units, '38.931732', '-109.828180', zoom = 7, 'osm')
+
+```
+
+# Study Area
+
+## Column desc {width='45%'}
+
+### arches
+
+::: {.card title='Arches National Park'}
+Arches National Park is located north of Moab in Southeast Utah and is part of 
+NCPN. Elevation in the park ranges from about 4,000 feet in the canyons to 
+5,200 feet on the rims. With an arid climate, the summers are hot and dry, and 
+the winters are cool to cold. Average annual precipitation is about 8 inches, 
+and temperatures can reach extremes, from -16F to 112F. Most of the park is 
+covered by exposed bedrock, weakly developed soils, and sand dunes. The most 
+common vegetation type in the park is desert shurblands, but woodlands and 
+sparse woodlands are also common.
+
+Sources:
+Biophysical Description of Arches National Park (U.S. National Park 
+Service). (n.d.). Retrieved December 13, 2025, from 
+[https://www.nps.gov/im/ncpn/bpd-arch.htm](https://www.nps.gov/im/ncpn/bpd-arch.htm)
+
+Natural resources monitoring at Arches National Park 
+(U.S. National Park Service). (n.d.). Retrieved December 13, 2025, from 
+[https://www.nps.gov/im/ncpn/arch.htm](https://www.nps.gov/im/ncpn/arch.htm)
+:::
+
+## Column map {width='55%'}
+
+```{r arch_map}
+cat("title= Map of Arches") 
+
+map_leaflet(ncpn_units %>% filter(UNIT_CODE == 'ARCH'), 
+            '38.710283', '-109.585540', 
+            zoom = 11,
+            'esri')
+```
+
+# Methods
+
+## Column methods {width='50%'}
+
+### Row design {height='70%'}
+::: {.card title ='Sampling Design & Field Methods'}
+Uplands monitoring began in Arches National Park in 2010 to address the 
+management issue of social trailing, and approximately 2,500 hectares are 
+monitored. The sampling unit is a plot and consists of three parallel, 50-meter 
+transects that are spaced 25 meters apart. To increase the overall sample size, 
+a rotating panel design is used where plots are sampled 1-2 years in a row with 
+3-6 years of rest.
+
+The point-intercept method is used for estimating vegetation and soil surface 
+cover and uses for grassland/shrubland vegetation types. Vegetation and ground 
+cover attributes are recorded at 0.5-meter intervals, and plant species at any 
+height are recorded. A laser is used at each point, and any vegetation, dead or 
+alive that the laser intercepts is recorded.
+
+The [Upland Vegetation and Soils Monitoring Protocol](https://irma.nps.gov/DataStore/DownloadFile/593449), 
+provides in-depth details about the sampling design.
+
+Sources: 
+Hobbs A, Wight A, Livensperger C, Witwicki D, Thomas H, Brehm JR, Miller ME, Weissinger R, Topp S, Garman SL. 2024. Upland Vegetation and Soils Monitoring for the Northern Colorado Plateau Network: 2009-2023 - Data Package. National Park Service. Fort Collins CO
+[https://doi.org/10.57830/2305079](https://doi.org/10.57830/2305079)
+
+Witwicki D, Thomas H, Weissinger R, Wight A, Topp S, Garman SL, Miller ME. 2017. Upland vegetation and soils monitoring protocol for park units in the Northern Colorado Plateau Network: version 1.07. Natural Resource Report. NPS/NCPN/NRR—2017/1570. National Park Service. Fort Collins, Colorado
+[https://irma.nps.gov/DataStore/Reference/Profile/2248124](https://irma.nps.gov/DataStore/Reference/Profile/2248124)
+:::
+
+### Row analysis {height='30%'}
+::: {.card title='Analysis'}
+The Uplands point intercept data is available at the [NPS DataStore](https://irma.nps.gov/DataStore/Reference/Profile/2305079). I 
+downloaded the CSV, read it into R, and filtered the tibble for records from 
+Arches National Park. Since I was only interested in the live vegetation and 
+soil crust, I also filtered out any records where the vegetation status was 
+dead, and any records that were not vegetation, soil crust, or bare soil. I 
+removed any duplicate species records for a transect point, counted the hits 
+for each unique species, and calculated percent cover. The data at the various 
+stages can be viewed on the Results page.
+:::
+
+## Column data imgs {width='50%'}
+
+### Data Collection Example
+
+![Sample Datasheet](../images/data_sheet_example.png){width="95%"}
+
+![Transect Points Associated with Sample Datasheet](../images/transect_points_example.png){width="95%"}
+Source: [https://irma.nps.gov/DataStore/DownloadFile/631393](https://irma.nps.gov/DataStore/DownloadFile/631393)
+
+# Results
+
+# Discussion
