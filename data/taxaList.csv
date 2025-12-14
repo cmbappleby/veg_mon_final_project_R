@@ -1,0 +1,320 @@
+taxonID,taxaCode,scientificName_SEUG,scientificName_ITIS,taxonRank,update_date,kingdom,class,order,family,genus,specificEpithet,vernacularName
+ITIS:19557,ABRFRA,Abronia fragrans,Abronia fragrans,species,2012-06-27,Plantae,Magnoliopsida,Caryophyllales,Nyctaginaceae,Abronia,fragrans,sweet sand verbena
+ITIS:28749,ACENEG,Acer negundo,Acer negundo,species,2011-12-08,Plantae,Magnoliopsida,Sapindales,Sapindaceae,Acer,negundo,western boxelder
+ITIS:40371,AGRCRI,Agropyron cristatum,Agropyron cristatum,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Agropyron,cristatum,crested wheatgrass
+ITIS:42682,ALLMAC,Allium macropetalum,Allium macropetalum,species,2011-02-24,Plantae,Magnoliopsida,Asparagales,Amaryllidaceae,Allium,macropetalum,largeflower onion
+ITIS:42687,ALLNEV,Allium nevadense,Allium nevadense,species,2011-02-24,Plantae,Magnoliopsida,Asparagales,Amaryllidaceae,Allium,nevadense,Nevada onion
+ITIS:42634,ALLSPP,Allium,Allium,genus,2011-02-24,NA,NA,NA,NA,NA,,wild onion
+ITIS:20715,AMASPP,Amaranthus,Amaranthus,genus,2011-08-30,NA,NA,NA,NA,NA,,pigweed
+ITIS:36497,AMBACA,Ambrosia acanthicarpa,Ambrosia acanthicarpa,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Ambrosia,acanthicarpa,sand bursage
+ITIS:25121,AMEUTA,Amelanchier utahensis,Amelanchier utahensis,species,2011-12-08,Plantae,Magnoliopsida,Rosales,Rosaceae,Amelanchier,utahensis,western serviceberry
+ITIS:30150,AMSTOM,Amsonia tomentosa,Amsonia tomentosa,species,2012-05-31,Plantae,Magnoliopsida,Gentianales,Apocynaceae,Amsonia,tomentosa,woolly bluestar
+ITIS:42777,ANDBRE,Androstephium breviflorum,Androstephium breviflorum,species,2011-02-24,Plantae,Magnoliopsida,Asparagales,Asparagaceae,Androstephium,breviflorum,pink funnel lily
+ITIS:22671,ARABSP,Arabis,Arabis,genus,2011-08-30,NA,NA,NA,NA,NA,,rockcress
+ITIS:509594,ARAPER,Arabis perennans,Boechera perennans,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Boechera,perennans,perennial rockcress
+ITIS:509595,ARAPUL,Arabis pulchra,Boechera pulchra,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Boechera,pulchra,beautiful rockcress
+ITIS:23512,ARCPAT,Arctostaphylos patula,Arctostaphylos patula,species,2012-05-31,Plantae,Magnoliopsida,Ericales,Ericaceae,Arctostaphylos,patula,greenleaf manzanita
+ITIS:512989,AREFEN,Arenaria fendleri,Eremogone fendleri,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Caryophyllaceae,Eremogone,fendleri,Fendlers sandwort
+ITIS:41429,ARIPUR,Aristida purpurea,Aristida purpurea,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Aristida,purpurea,purple 3 awn
+ITIS:35452,ARTBIG,Artemisia bigelovii,Artemisia bigelovii,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Artemisia,bigelovii,Bigelow sage
+ITIS:183748,ARTCAM,Artemisia campestris,Artemisia campestris,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Artemisia,campestris,wormwood sagewort
+ITIS:35462,ARTDRA,Artemisia dracunculus,Artemisia dracunculus,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Artemisia,dracunculus,wormwood
+ITIS:35463,ARTFIL,Artemisia filifolia,Artemisia filifolia,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Artemisia,filifolia,silvery wormwood
+ITIS:35474,ARTLUD,Artemisia ludoviciana,Artemisia ludoviciana,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Artemisia,ludoviciana,white sagebrush
+ITIS:519062,ARTSPI,Artemisia spinescens,Picrothamnus desertorum,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Picrothamnus,desertorum,bud sagebrush
+ITIS:35498,ARTTRI,Artemisia tridentata,Artemisia tridentata,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Artemisia,tridentata,big sagebush
+ITIS:30247,ASCASP,Asclepias asperula,Asclepias asperula,species,2012-05-31,Plantae,Magnoliopsida,Gentianales,Apocynaceae,Asclepias,asperula,spider milkweed
+ITIS:30283,ASCMAC,Asclepias macrosperma,Asclepias macrosperma,species,2012-05-31,Plantae,Magnoliopsida,Gentianales,Apocynaceae,Asclepias,macrosperma,largeseed milkweed
+ITIS:30304,ASCSPE,Asclepias speciosa,Asclepias speciosa,species,2012-05-31,Plantae,Magnoliopsida,Gentianales,Apocynaceae,Asclepias,speciosa,showy milkweed
+ITIS:30240,ASCSPP,Asclepias,Asclepias,genus,2012-05-31,NA,NA,NA,NA,NA,,milkweed
+ITIS:30308,ASCSUB,Asclepias subverticillata,Asclepias subverticillata,species,2012-05-31,Plantae,Magnoliopsida,Gentianales,Apocynaceae,Asclepias,subverticillata,whorled milkweed
+ITIS:25414,ASTAMP,Astragalus amphioxys,Astragalus amphioxys,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,amphioxys,Crescent milkvetch
+ITIS:522184,ASTASC,Aster ascendens,Symphyotrichum ascendens,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Symphyotrichum,ascendens,western aster
+ITIS:25457,ASTCER,Astragalus ceramicus,Astragalus ceramicus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,ceramicus,painted milkvetch
+ITIS:25488,ASTCYM,Astragalus cymboides,Astragalus cymboides,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,cymboides,canoe milkvetch
+ITIS:25491,ASTDES,Astragalus desperatus,Astragalus desperatus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,desperatus,rimrock milkvetch
+ITIS:35420,ASTER,Asteraceae,Asteraceae,family,2014-12-22,NA,NA,NA,NA,NA,,sunflowers
+ITIS:25559,ASTLEN,Astragalus lentiginosus,Astragalus lentiginosus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,lentiginosus,speckledpod milkvetch
+ITIS:25589,ASTMOL,Astragalus mollissimus,Astragalus mollissimus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,mollissimus,woolly milkvetch
+ITIS:25607,ASTNUT,Astragalus nuttallianus,Astragalus nuttallianus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,nuttallianus,smallflowered milkvetch
+ITIS:25640,ASTPRE,Astragalus preussii,Astragalus preussii,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,preussii,Preuss milkvetch
+ITIS:25392,ASTRSP,Astragalus,Astragalus,genus,2011-06-29,NA,NA,NA,NA,NA,,milkvetch
+ITIS:35510,ASTSPP,Aster,Aster,genus,2010-10-05,NA,NA,NA,NA,NA,,aster
+ITIS:25727,ASTWIN,Astragalus wingatanus,Astragalus wingatanus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Astragalus,wingatanus,Fort Wingate milkvetch
+ITIS:20518,ATRCAN,Atriplex canescens,Atriplex canescens,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Atriplex,canescens,fourwing saltbush
+ITIS:20519,ATRCON,Atriplex confertifolia,Atriplex confertifolia,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Atriplex,confertifolia,shadscale saltbush
+ITIS:20522,ATRCOR,Atriplex corrugata,Atriplex corrugata,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Atriplex,corrugata,mat saltbush
+ITIS:20531,ATRGAR,Atriplex gardneri,Atriplex gardneri,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Atriplex,gardneri,Gardners saltbush
+ITIS:31633,BORAGI,Boraginaceae,Boraginaceae,family,2014-12-22,NA,NA,NA,NA,NA,,borage
+ITIS:41498,BOUBAR,Bouteloua barbata,Bouteloua barbata,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Bouteloua,barbata,sixweeks grama
+ITIS:41493,BOUGRA,Bouteloua gracilis,Bouteloua gracilis,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Bouteloua,gracilis,blue grama
+ITIS:23054,BRASPP,Brassica,Brassica,genus,2011-08-30,NA,NA,NA,NA,NA,,mustard
+ITIS:36885,BRILON,Brickellia longifolia,Brickellia longifolia,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Brickellia,longifolia,longleaf brickellbush
+ITIS:36891,BRIOBL,Brickellia oblongifolia,Brickellia oblongifolia,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Brickellia,oblongifolia,Mojave brickellbush
+ITIS:40502,BROINE,Bromus inermis,Bromus inermis,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Bromus,inermis,smooth brome
+ITIS:40518,BRORUB,Bromus rubens,Bromus rubens,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Bromus,rubens,red brome
+ITIS:40524,BROTEC,Bromus tectorum,Bromus tectorum,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Bromus,tectorum,wild oats
+ITIS:42848,CALFLE,Calochortus flexuosus,Calochortus flexuosus,species,2011-02-24,Plantae,Magnoliopsida,Liliales,Liliaceae,Calochortus,flexuosus,winding mariposa lily
+ITIS:517708,CALLAV,Calylophus lavandulifolius,Oenothera lavandulifolia,species,2011-12-08,Plantae,Magnoliopsida,Myrtales,Onagraceae,Oenothera,lavandulifolia,lavenderleaf sundrops
+ITIS:42863,CALNUT,Calochortus nuttallii,Calochortus nuttallii,species,2011-02-24,Plantae,Magnoliopsida,Liliales,Liliaceae,Calochortus,nuttallii,sego lily
+ITIS:40566,CALSCO,Calamagrostis scopulorum,Calamagrostis scopulorum,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Calamagrostis,scopulorum,Jones reedgrass
+ITIS:913886,CAMSCA,Camissonia scapoidea,Chylismia scapoidea,species,2013-07-25,Plantae,Magnoliopsida,Myrtales,Onagraceae,Chylismia,scapoidea,NA
+ITIS:42877,CAMSPP,Camassia,Camassia,genus,2011-02-24,NA,NA,NA,NA,NA,,camas
+ITIS:836016,CAMWAL,Camissonia walkeri,Chylismia walkeri,species,2011-12-08,Plantae,Magnoliopsida,Myrtales,Onagraceae,Chylismia,walkeri,Walkers suncup
+ITIS:533200,CASCHR,Castilleja chromosa,Castilleja angustifolia dubia,variety,2011-09-22,NA,NA,NA,NA,NA,,NA
+ITIS:33138,CASLIN,Castilleja linariifolia,Castilleja linariifolia,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Orobanchaceae,Castilleja,linariifolia,Wyoming Indian paintbrush
+ITIS:33165,CASSCA,Castilleja scabrida,Castilleja scabrida,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Orobanchaceae,Castilleja,scabrida,rough Indian paintbrush
+ITIS:33049,CASSPP,Castilleja,Castilleja,genus,2011-09-22,NA,NA,NA,NA,NA,,Indian paintbrush
+ITIS:19045,CELRET,Celtis reticulata,Celtis reticulata,species,2012-08-29,Plantae,Magnoliopsida,Rosales,Cannabaceae,Celtis,reticulata,palo blanco
+ITIS:195850,CERINT,Cercocarpus intricatus,Cercocarpus ledifolius intricatus,variety,2011-12-08,NA,NA,NA,NA,NA,,littleleaf mountain mahogany
+ITIS:25136,CERMON,Cercocarpus montanus,Cercocarpus montanus,species,2011-12-08,Plantae,Magnoliopsida,Rosales,Rosaceae,Cercocarpus,montanus,true mountain mahogany
+ITIS:30507,CHACOR,Chamaesaracha coronopus,Chamaesaracha coronopus,species,2011-06-29,Plantae,Magnoliopsida,Solanales,Solanaceae,Chamaesaracha,coronopus,greenleaf five eyes
+ITIS:501376,CHAERI,Chaetopappa ericoides,Chaetopappa ericoides,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Chaetopappa,ericoides,rose heath
+ITIS:28069,CHAFEN,Chamaesyce fendleri,Euphorbia fendleri,species,2017-04-25,Plantae,Magnoliopsida,Malpighiales,Euphorbiaceae,Euphorbia,fendleri,Fendlers sandmat
+ITIS:28114,CHAPAR,Chamaesyce parryi,Euphorbia parryi,species,2017-04-25,Plantae,Magnoliopsida,Malpighiales,Euphorbiaceae,Euphorbia,parryi,Parrys sandmat
+ITIS:36998,CHASTE,Chaenactis stevioides,Chaenactis stevioides,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Chaenactis,stevioides,Esteves pincushion
+ITIS:20592,CHEALB,Chenopodium album,Chenopodium album,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Chenopodium,album,white goosefoot
+ITIS:20593,CHEATR,Chenopodium atrovirens,Chenopodium atrovirens,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Chenopodium,atrovirens,pinyon goosefoot
+ITIS:20610,CHEGLA,Chenopodium glaucum,Chenopodium glaucum,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Chenopodium,glaucum,oakleaf goosefoot
+ITIS:20714,CHENOP,Chenopodiaceae,Amaranthaceae,family,2014-12-22,NA,NA,NA,NA,NA,,pigweed
+ITIS:17432,CHESPP,Cheilanthes,Cheilanthes,genus,2012-10-26,NA,NA,NA,NA,NA,,lipfern
+ITIS:566645,CHRNAU,Chrysothamnus nauseosus,Ericameria nauseosa nauseosa,variety,2010-10-05,NA,NA,NA,NA,NA,,rubber rabbitbrush
+ITIS:528399,CHRVIL,Chrysopsis villosa,Heterotheca villosa villosa,variety,2010-10-05,NA,NA,NA,NA,NA,,hairy false goldenaster
+ITIS:37090,CHRVIS,Chrysothamnus viscidiflorus,Chrysothamnus viscidiflorus,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Chrysothamnus,viscidiflorus,yellow rabbitbrush
+ITIS:780830,CIRCAL,Cirsium calcareum,Cirsium arizonicum bipinnatum,variety,2010-10-05,NA,NA,NA,NA,NA,,Cainville thistle
+ITIS:18702,CLELIG,Clematis ligusticifolia,Clematis ligusticifolia,species,2011-06-29,Plantae,Magnoliopsida,Ranunculales,Ranunculaceae,Clematis,ligusticifolia,western white clematis
+ITIS:823037,CLELUT,Cleome lutea,Peritoma lutea,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Cleomaceae,Peritoma,lutea,yellow spiderflower
+ITIS:25150,COLRAM,Coleogyne ramosissima,Coleogyne ramosissima,species,2011-12-08,Plantae,Magnoliopsida,Rosales,Rosaceae,Coleogyne,ramosissima,blackbrush
+ITIS:501614,COMUMB,Comandra umbellata,Comandra umbellata,species,2012-06-27,Plantae,Magnoliopsida,Santalales,Santalaceae,Comandra,umbellata,bastard toadflax
+ITIS:37113,CONCAN,Conyza canadensis,Conyza canadensis,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Conyza,canadensis,marestail
+ITIS:18999,CORAUR,Corydalis aurea,Corydalis aurea,species,2012-06-27,Plantae,Magnoliopsida,Ranunculales,Papaveraceae,Corydalis,aurea,scrambled eggs
+ITIS:33577,CORWRI,Cordylanthus wrightii,Cordylanthus wrightii,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Orobanchaceae,Cordylanthus,wrightii,Wrights birds beak
+ITIS:31800,CRYCRA,Cryptantha crassisepala,Cryptantha crassisepala,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Cryptantha,crassisepala,thicksepal cryptantha
+ITIS:31770,CRYFLA,Cryptantha flava,Cryptantha flava,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Cryptantha,flava,Brendas yellow cryptantha
+ITIS:31809,CRYFLV,Cryptantha flavoculata,Cryptantha flavoculata,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Cryptantha,flavoculata,roughseed cryptantha
+ITIS:31811,CRYFUL,Cryptantha fulvocanescens,Cryptantha fulvocanescens,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Cryptantha,fulvocanescens,tawny cryptantha
+ITIS:31850,CRYOST,Cryptantha osterhoutii,Cryptantha osterhoutii,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Cryptantha,osterhoutii,Osterhouts cryptantha
+ITIS:31765,CRYSPP,Cryptantha,Cryptantha,genus,2011-12-08,NA,NA,NA,NA,NA,,NA
+ITIS:31777,CRYTEN,Cryptantha tenuis,Cryptantha tenuis,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Cryptantha,tenuis,canyon cryptantha
+ITIS:822327,CYMACA,Cymopterus acaulis,Cymopterus glomeratus,species,2011-07-25,Plantae,Magnoliopsida,Apiales,Apiaceae,Cymopterus,glomeratus,plains springparsley
+ITIS:29631,CYMBUL,Cymopterus bulbosus,Cymopterus bulbosus,species,2011-07-25,Plantae,Magnoliopsida,Apiales,Apiaceae,Cymopterus,bulbosus,bulbous springparsley
+ITIS:29649,CYMNEW,Cymopterus newberryi,Cymopterus newberryi,species,2011-07-25,Plantae,Magnoliopsida,Apiales,Apiaceae,Cymopterus,newberryi,sweetroot springparsley
+ITIS:29654,CYMPUR,Cymopterus purpureus,Cymopterus purpureus,species,2011-07-25,Plantae,Magnoliopsida,Apiales,Apiaceae,Cymopterus,purpureus,purple springparsley
+ITIS:29653,CYMPUR2,Cymopterus purpurascens,Cymopterus purpurascens,species,2011-07-25,Plantae,Magnoliopsida,Apiales,Apiaceae,Cymopterus,purpurascens,widewing springparsley
+ITIS:29625,CYMSPP,Cymopterus,Cymopterus,genus,2011-07-25,NA,NA,NA,NA,NA,,springparsley
+ITIS:192889,DALOLI,Dalea oligophylla,Dalea candida oligophylla,variety,2011-06-29,NA,NA,NA,NA,NA,,white prairie clover
+ITIS:501976,DELAND,Delphinium andersonii,Delphinium andersonii,species,2011-06-29,Plantae,Magnoliopsida,Ranunculales,Ranunculaceae,Delphinium,andersonii,Andersons larkspur
+ITIS:18483,DELNUT,Delphinium nuttallianum,Delphinium nuttallianum,species,2011-06-29,Plantae,Magnoliopsida,Ranunculales,Ranunculaceae,Delphinium,nuttallianum,twolobe larkspur
+ITIS:22826,DESPIN,Descurainia pinnata,Descurainia pinnata,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Descurainia,pinnata,western tansymustard
+ITIS:40662,DISSPI,Distichlis spicata,Distichlis spicata,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Distichlis,spicata,seashore saltgrass
+ITIS:502067,DITWIS,Dithyrea wislizeni,Dimorphocarpa wislizeni,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Dimorphocarpa,wislizeni,touristplant
+ITIS:22874,DRACUN,Draba cuneifolia,Draba cuneifolia,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Draba,cuneifolia,wedgeleaf draba
+ITIS:19815,ECHTRI,Echinocereus triglochidiatus,Echinocereus triglochidiatus,species,2013-06-12,Plantae,Magnoliopsida,Caryophyllales,Cactaceae,Echinocereus,triglochidiatus,Mojave mound cactus
+ITIS:40683,ELYCAN,Elymus canadensis,Elymus canadensis,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Elymus,canadensis,Canada wildrye
+ITIS:502264,ELYELY,Elymus elymoides,Elymus elymoides,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Elymus,elymoides,western bottle brush grass
+ITIS:502282,ELYTRA,Elymus trachycaulus,Elymus trachycaulus,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Elymus,trachycaulus,slender wild rye
+ITIS:37309,ENCFRU,Encelia frutescens,Encelia frutescens,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Encelia,frutescens,button brittlebush
+ITIS:512870,ENCNUT,Enceliopsis nutans,Encelia nutans,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Encelia,nutans,nodding sunray
+ITIS:502318,EPHTOR,Ephedra torreyana,Ephedra torreyana,species,2011-07-25,Plantae,Gnetopsida,Ephedrales,Ephedraceae,Ephedra,torreyana,Torreys Mormon tea
+ITIS:502319,EPHVIR,Ephedra viridis,Ephedra viridis,species,2011-07-25,Plantae,Gnetopsida,Ephedrales,Ephedraceae,Ephedra,viridis,Mormon tea
+ITIS:17154,EQUHYE,Equisetum hyemale,Equisetum hyemale,species,2012-11-29,Plantae,Polypodiopsida,Equisetales,Equisetaceae,Equisetum,hyemale,western scouringrush
+ITIS:17156,EQULAE,Equisetum laevigatum,Equisetum laevigatum,species,2012-11-29,Plantae,Polypodiopsida,Equisetales,Equisetaceae,Equisetum,laevigatum,smooth scouringrush
+ITIS:41717,ERETRI,Eremopyrum triticeum,Eremopyrum triticeum,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Eremopyrum,triticeum,annual wheatgrass
+ITIS:21057,ERIALA,Eriogonum alatum,Eriogonum alatum,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,alatum,winged buckwheat
+ITIS:35827,ERIBEL,Erigeron bellidiastrum,Erigeron bellidiastrum,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Erigeron,bellidiastrum,western daisy fleabane
+ITIS:21078,ERIBIC,Eriogonum bicolor,Eriogonum bicolor,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,bicolor,pretty buckwheat
+ITIS:21090,ERICER,Eriogonum cernuum,Eriogonum cernuum,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,cernuum,nodding wild buckwheat
+ITIS:21103,ERICOR,Eriogonum corymbosum,Eriogonum corymbosum,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,corymbosum,white buckwheat
+ITIS:31059,ERIDIF,Eriastrum diffusum,Eriastrum diffusum,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Eriastrum,diffusum,miniature woolstar
+ITIS:35852,ERIDIV,Erigeron divergens,Erigeron divergens,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Erigeron,divergens,spreading fleabane
+ITIS:35803,ERIGSP,Erigeron,Erigeron,genus,2010-10-05,NA,NA,NA,NA,NA,,fleabane
+ITIS:21163,ERIINF,Eriogonum inflatum,Eriogonum inflatum,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,inflatum,desert trumpet
+ITIS:21179,ERILEP,Eriogonum leptocladon,Eriogonum leptocladon,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,leptocladon,sand buckwheat
+ITIS:21192,ERIMIC,Eriogonum microthecum,Eriogonum microthecum,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,microthecum,slenderbush eriogonum
+ITIS:21212,ERIOVA,Eriogonum ovalifolium,Eriogonum ovalifolium,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,ovalifolium,ovalleaf eriogonum
+ITIS:502413,ERIPAL,Eriogonum palmerianum,Eriogonum palmerianum,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,palmerianum,Palmers buckwheat
+ITIS:512087,ERIPUL,Erioneuron pulchellum,Dasyochloa pulchella,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Dasyochloa,pulchella,low woollygrass
+ITIS:35934,ERIPUM,Erigeron pumilus,Erigeron pumilus,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Erigeron,pumilus,shaggy fleabane
+ITIS:21245,ERISHO,Eriogonum shockleyi,Eriogonum shockleyi,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,shockleyi,Shockleys buckwheat
+ITIS:21054,ERISPP,Eriogonum,Eriogonum,genus,2011-08-30,NA,NA,NA,NA,NA,,buckwheat
+ITIS:21278,ERIWET,Eriogonum wetherillii,Eriogonum wetherillii,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Eriogonum,wetherillii,Wetherills buckwheat
+ITIS:29147,EROCIC,Erodium cicutarium,Erodium cicutarium,species,2012-06-27,Plantae,Magnoliopsida,Geraniales,Geraniaceae,Erodium,cicutarium,storks bill
+ITIS:22931,ERYASP,Erysimum asperum,Erysimum asperum,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Erysimum,asperum,western wallflower
+ITIS:28032,EUPHSP,Euphorbia,Euphorbia,genus,2017-04-25,NA,NA,NA,NA,NA,,spurge
+ITIS:500059,FABACE,Fabaceae,Fabaceae,family,2022-02-25,NA,NA,NA,NA,NA,,peas
+ITIS:42264,FESOCT,Festuca octoflora,Vulpia octoflora,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Vulpia,octoflora,sixweeks grass
+NA,FORB,Unidentifiable forb species,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+ITIS:32937,FRAANO,Fraxinus anomala,Fraxinus anomala,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Oleaceae,Fraxinus,anomala,singleleaf ash
+NA,FUNGI,Unidentifiable fungi species,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+ITIS:37409,GAIPIN,Gaillardia pinnatifida,Gaillardia pinnatifida,species,2022-09-24,Plantae,Magnoliopsida,Asterales,Asteraceae,Gaillardia,pinnatifida,yellow blanketflower
+ITIS:34892,GALMUL,Galium multiflorum,Galium multiflorum,species,2012-02-27,Plantae,Magnoliopsida,Gentianales,Rubiaceae,Galium,multiflorum,shrubby bedstraw
+ITIS:623892,GEASTR,Geastraceae,Geastraceae,family,2014-04-29,NA,NA,NA,NA,NA,,NA
+ITIS:31127,GILINC,Gilia inconspicua,Gilia inconspicua,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Gilia,inconspicua,shy gilia
+ITIS:845240,GILLEP,Gilia leptomeria,Aliciella leptomeria,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Aliciella,leptomeria,sand gilia
+ITIS:31075,GILSPP,Gilia,Gilia,genus,2012-01-27,NA,NA,NA,NA,NA,,NA
+ITIS:845238,GILSUB,Gilia subnuda,Aliciella subnuda,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Aliciella,subnuda,coral gilia
+ITIS:37433,GLYMAR,Glyptopleura marginata,Glyptopleura marginata,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Glyptopleura,marginata,carveseed
+ITIS:20690,GRASPI,Grayia spinosa,Grayia spinosa,species,2014-06-26,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Grayia,spinosa,spiny hopsage
+ITIS:37472,GRISQU,Grindelia squarrosa,Grindelia squarrosa,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Grindelia,squarrosa,tarweed
+ITIS:37483,GUTSAR,Gutierrezia sarothrae,Gutierrezia sarothrae,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Gutierrezia,sarothrae,yellow top
+ITIS:37478,GUTSPP,Gutierrezia,Gutierrezia,genus,2010-10-05,NA,NA,NA,NA,NA,,snakeweed
+ITIS:20692,HALGLO,Halogeton glomeratus,Halogeton glomeratus,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Halogeton,glomeratus,saltlover
+ITIS:530563,HAPARM,Haplopappus armerioides,Stenotus armerioides armerioides,variety,2010-10-05,NA,NA,NA,NA,NA,,thrift mock goldenweed
+ITIS:32512,HEDDRU,Hedeoma drummondii,Hedeoma drummondii,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Lamiaceae,Hedeoma,drummondii,Drummonds pennyroyal
+ITIS:37595,HELMIC,Helianthella microcephala,Helianthella microcephala,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Helianthella,microcephala,purpledisk helianthella
+ITIS:36671,HELPET,Helianthus petiolaris,Helianthus petiolaris,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Helianthus,petiolaris,showy sunflower
+ITIS:37689,HETVIL,Heterotheca villosa,Heterotheca villosa,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Heterotheca,villosa,hairy false goldenaster
+ITIS:41768,HILJAM,Hilaria jamesii,Hilaria jamesii,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Hilaria,jamesii,NA
+ITIS:40866,HORPUS,Hordeum pusillum,Hordeum pusillum,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Hordeum,pusillum,little wildbarley
+ITIS:530623,HYMACA,Hymenoxys acaulis,Tetraneuris acaulis acaulis,variety,2010-10-05,NA,NA,NA,NA,NA,,stemless four nerve daisy
+ITIS:37766,HYMFIL,Hymenopappus filifolius,Hymenopappus filifolius,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Hymenopappus,filifolius,fineleaf hymenopappus
+ITIS:31192,IPOAGG,Ipomopsis aggregata,Ipomopsis aggregata,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Ipomopsis,aggregata,scarlet gilia
+ITIS:31210,IPOGUN,Ipomopsis gunnisonii,Ipomopsis gunnisonii,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Ipomopsis,gunnisonii,sanddune skyrocket
+ITIS:31198,IPOLON,Ipomopsis longiflora,Ipomopsis longiflora,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Ipomopsis,longiflora,whiteflowered gilia
+ITIS:31216,IPOPOL,Ipomopsis polycladon,Ipomopsis polycladon,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Ipomopsis,polycladon,sprawling skyrocket
+ITIS:31217,IPOPUM,Ipomopsis pumila,Ipomopsis pumila,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Ipomopsis,pumila,spotted gilia
+ITIS:31218,IPOROS,Ipomopsis roseata,Ipomopsis roseata,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Ipomopsis,roseata,rosy ipomopsis
+ITIS:39222,JUNARC,Juncus arcticus,Juncus arcticus,species,2011-04-25,Plantae,Magnoliopsida,Poales,Juncaceae,Juncus,arcticus,Arctic rush
+ITIS:194859,JUNOST,Juniperus osteosperma,Juniperus osteosperma,species,2011-07-25,Plantae,Pinopsida,Pinales,Cupressaceae,Juniperus,osteosperma,Utah juniper
+ITIS:39220,JUNSPP,Juncus,Juncus,genus,2011-04-25,NA,NA,NA,NA,NA,,rush
+ITIS:503290,KRALAN,Krascheninnikovia lanata,Krascheninnikovia lanata,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Krascheninnikovia,lanata,winterfat
+ITIS:36608,LACSER,Lactuca serriola,Lactuca serriola,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Lactuca,serriola,prickly lettuce
+ITIS:503329,LAPOCC,Lappula occidentalis,Lappula occidentalis,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Lappula,occidentalis,flatspine stickseed
+ITIS:503372,LEPALY,Lepidium alyssoides,Lepidium alyssoides,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Lepidium,alyssoides,mesa pepperwort
+ITIS:22960,LEPDEN,Lepidium densiflorum,Lepidium densiflorum,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Lepidium,densiflorum,prairie pepperweed
+ITIS:503381,LEPMON,Lepidium montanum,Lepidium montanum,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Lepidium,montanum,mountain pepperweed
+ITIS:845254,LEPPUN,Leptodactylon pungens,Linanthus pungens,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Linanthus,pungens,granite prickly phlox
+ITIS:22953,LEPSPP,Lepidium,Lepidium,genus,2011-08-30,NA,NA,NA,NA,NA,,pepperweed
+ITIS:29231,LINARI,Linum aristatum,Linum aristatum,species,2012-03-29,Plantae,Magnoliopsida,Malpighiales,Linaceae,Linum,aristatum,bristle flax
+ITIS:29217,LINPER,Linum perenne,Linum perenne,species,2012-03-29,Plantae,Magnoliopsida,Malpighiales,Linaceae,Linum,perenne,blue flax
+ITIS:29735,LOMPAR,Lomatium parryi,Lomatium parryi,species,2011-07-25,Plantae,Magnoliopsida,Apiales,Apiaceae,Lomatium,parryi,Utah desertparsley
+ITIS:26099,LUPPUS,Lupinus pusillus,Lupinus pusillus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Lupinus,pusillus,rusty lupine
+ITIS:30544,LYCPAL,Lycium pallidum,Lycium pallidum,species,2011-06-29,Plantae,Magnoliopsida,Solanales,Solanaceae,Lycium,pallidum,pale desert thorn
+ITIS:503622,LYGGRA,Lygodesmia grandiflora,Lygodesmia grandiflora,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Lygodesmia,grandiflora,largeflower skeletonplant
+ITIS:500397,LYGSPP,Lygodesmia,Lygodesmia,genus,2010-10-05,NA,NA,NA,NA,NA,,skeletonplant
+ITIS:512282,MACCAN,Machaeranthera canescens,Dieteria canescens,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Dieteria,canescens,hoary aster
+ITIS:780547,MACGRI,Machaeranthera grindelioides,Xanthisma grindelioides,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Xanthisma,grindelioides,rayless tansyaster
+ITIS:37970,MACSPP,Machaeranthera,Machaeranthera,genus,2010-10-05,NA,NA,NA,NA,NA,,tansyaster
+ITIS:38013,MACTAN,Machaeranthera tanacetifolia,Machaeranthera tanacetifolia,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Machaeranthera,tanacetifolia,tanseyleaf tansyaster
+ITIS:18821,MAHFRE,Mahonia fremontii,Berberis fremontii,species,2012-06-27,Plantae,Magnoliopsida,Ranunculales,Berberidaceae,Berberis,fremontii,Fremonts berberis
+ITIS:822984,MALAFR,Malcolmia africana,Strigosella africana,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Strigosella,africana,African mustard
+ITIS:38050,MALGLA,Malacothrix glabrata,Malacothrix glabrata,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Malacothrix,glabrata,smooth desertdandelion
+ITIS:38055,MALSON,Malacothrix sonchoides,Malacothrix sonchoides,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Malacothrix,sonchoides,sowthistle desertdandelion
+ITIS:516979,MELALB,Melilotus alba,Melilotus albus,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Melilotus,albus,white sweet clover
+ITIS:26150,MELOFF,Melilotus officinalis,Melilotus officinalis,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Melilotus,officinalis,yellow sweetclover
+ITIS:503757,MENALB,Mentzelia albicaulis,Mentzelia albicaulis,species,2012-06-27,Plantae,Magnoliopsida,Cornales,Loasaceae,Mentzelia,albicaulis,whitestem stickleaf
+ITIS:503788,MENMUL,Mentzelia multiflora,Mentzelia multiflora,species,2012-06-27,Plantae,Magnoliopsida,Cornales,Loasaceae,Mentzelia,multiflora,manyflowered mentzelia
+ITIS:32981,MENSPP,Menodora,Menodora,genus,2011-09-22,NA,NA,NA,NA,NA,,twinberry
+ITIS:33270,MIMRUB,Mimulus rubellus,Mimulus rubellus,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Phrymaceae,Mimulus,rubellus,little redstem monkeyflower
+ITIS:19651,MIRLIN,Mirabilis linearis,Mirabilis linearis,species,2012-06-27,Plantae,Magnoliopsida,Caryophyllales,Nyctaginaceae,Mirabilis,linearis,narrowleaf four oclock
+ITIS:529219,MIRMUL,Mirabilis multiflora var glandulosa,Mirabilis multiflora glandulosa,variety,2012-06-27,NA,NA,NA,NA,NA,,Colorado four oclock
+ITIS:20700,MONNUT,Monolepis nuttalliana,Monolepis nuttalliana,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Monolepis,nuttalliana,patota
+ITIS:41899,MUHASP,Muhlenbergia asperifolia,Muhlenbergia asperifolia,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Muhlenbergia,asperifolia,scratchgrass
+ITIS:41934,MUHPUN,Muhlenbergia pungens,Muhlenbergia pungens,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Muhlenbergia,pungens,sandhill muhly
+ITIS:41883,MUHSPP,Muhlenbergia,Muhlenbergia,genus,2010-11-30,NA,NA,NA,NA,NA,,muhly
+ITIS:835396,NAMDEN,Nama densum,Nama densa,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Boraginaceae,Nama,densa,mat nama
+ITIS:27373,OENALB,Oenothera albicaulis,Oenothera albicaulis,species,2011-12-08,Plantae,Magnoliopsida,Myrtales,Onagraceae,Oenothera,albicaulis,whitest eveningprimrose
+ITIS:27382,OENCAE,Oenothera caespitosa,Oenothera cespitosa,species,2011-12-08,Plantae,Magnoliopsida,Myrtales,Onagraceae,Oenothera,cespitosa,tufted evening primrose
+ITIS:27428,OENLON,Oenothera longissima,Oenothera longissima,species,2011-12-08,Plantae,Magnoliopsida,Myrtales,Onagraceae,Oenothera,longissima,longstem evening primrose
+ITIS:27436,OENPAL,Oenothera pallida,Oenothera pallida,species,2011-12-08,Plantae,Magnoliopsida,Myrtales,Onagraceae,Oenothera,pallida,pale evening primrose
+ITIS:19726,OPUPOL,Opuntia polyacantha,Opuntia polyacantha,species,2013-06-12,Plantae,Magnoliopsida,Caryophyllales,Cactaceae,Opuntia,polyacantha,plains pricklypear
+ITIS:19686,OPUSPP,Opuntia,Opuntia,genus,2013-06-12,NA,NA,NA,NA,NA,,pricklypear
+ITIS:34290,OROFAS,Orobanche fasciculata,Orobanche fasciculata,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Orobanchaceae,Orobanche,fasciculata,tufted broomrape
+ITIS:34291,OROLUD,Orobanche ludoviciana,Orobanche ludoviciana,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Orobanchaceae,Orobanche,ludoviciana,Louisiana broomrape
+ITIS:34277,OROSPP,Orobanche,Orobanche,genus,2011-09-22,NA,NA,NA,NA,NA,,broomrape
+ITIS:518080,OXYACE,Oxytenia acerosa,Oxytenia acerosa,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Oxytenia,acerosa,copperweed
+ITIS:40914,PANCAP,Panicum capillare,Panicum capillare,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Panicum,capillare,witchgrass
+ITIS:33367,PEDCEN,Pedicularis centranthera,Pedicularis centranthera,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Orobanchaceae,Pedicularis,centranthera,dwarf lousewort
+ITIS:504181,PEDMEG,Pediomelum megalanthum,Pediomelum megalanthum,species,2011-06-29,Plantae,Magnoliopsida,Fabales,Fabaceae,Pediomelum,megalanthum,large flowered Indian breadroot
+ITIS:33812,PENANG,Penstemon angustifolius,Penstemon angustifolius,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Plantaginaceae,Penstemon,angustifolius,broadbeard beardtongue
+ITIS:33854,PENCOM,Penstemon comarrhenus,Penstemon comarrhenus,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Plantaginaceae,Penstemon,comarrhenus,dusty beardtongue
+ITIS:33686,PENEAT,Penstemon eatonii,Penstemon eatonii,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Plantaginaceae,Penstemon,eatonii,firecracker penstemon
+ITIS:40569,PENSPP,Pennisetum,Cenchrus,genus,2020-10-26,NA,NA,NA,NA,NA,,sandbur
+ITIS:33772,PENSTR,Penstemon strictus,Penstemon strictus,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Plantaginaceae,Penstemon,strictus,Rocky Mountain penstemon
+ITIS:33785,PENUTA,Penstemon utahensis,Penstemon utahensis,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Plantaginaceae,Penstemon,utahensis,Utah penstemon
+ITIS:38233,PETPUM,Petradoria pumila,Petradoria pumila,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Petradoria,pumila,grassy rockgoldenrod
+ITIS:31478,PHACRE,Phacelia crenulata,Phacelia crenulata,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Hydrophyllaceae,Phacelia,crenulata,cleftleaf wildheliotrope
+ITIS:504273,PHAIVE,Phacelia ivesiana,Phacelia ivesiana,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Hydrophyllaceae,Phacelia,ivesiana,Ives scorpion weed
+ITIS:30956,PHLLON,Phlox longifolia,Phlox longifolia,species,2012-01-27,Plantae,Magnoliopsida,Ericales,Polemoniaceae,Phlox,longifolia,longleaf phlox
+ITIS:41072,PHRAUS,Phragmites australis,Phragmites australis,species,2017-06-28,Plantae,Magnoliopsida,Poales,Poaceae,Phragmites,australis,common reed
+ITIS:23270,PHYACU,Physaria acutifolia,Physaria acutifolia,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Physaria,acutifolia,sharpleaf twinpod
+ITIS:23281,PHYNEW,Physaria newberryi,Physaria newberryi,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Physaria,newberryi,Newberrys twinpod
+ITIS:823232,PHYREC,Physaria rectipes,Physaria rectipes,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Physaria,rectipes,straight bladderpod
+ITIS:23269,PHYSPP,Physaria,Physaria,genus,2011-08-30,NA,NA,NA,NA,NA,,twinpod
+ITIS:183336,PINEDU,Pinus edulis,Pinus edulis,species,2011-07-25,Plantae,Pinopsida,Pinales,Pinaceae,Pinus,edulis,twoneedle pinyon
+ITIS:38253,PLAINT,Platyschkuhria integrifolia,Platyschkuhria integrifolia,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Platyschkuhria,integrifolia,oblongleaf basindaisy
+ITIS:32907,PLAPAT,Plantago patagonica,Plantago patagonica,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Plantaginaceae,Plantago,patagonica,woolly plantain
+ITIS:41112,POABIG,Poa bigelovii,Poa bigelovii,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Poa,bigelovii,Bigelows bluegrass
+ITIS:40351,POACEA,Poaceae,Poaceae,family,2014-12-22,NA,NA,NA,NA,NA,,grasses
+ITIS:504467,POAFEN,Poa fendleriana,Poa fendleriana,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Poa,fendleriana,muttongrass
+ITIS:41103,POASEC,Poa secunda,Poa secunda,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Poa,secunda,Sandbergs bluegrass
+ITIS:41074,POASPP,Poa,Poa,genus,2010-11-30,NA,NA,NA,NA,NA,,bluegrass spp
+ITIS:20876,POLAVI,Polygonum aviculare,Polygonum aviculare,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Polygonum,aviculare,prostrate knotweed
+ITIS:30896,POLEMO,Polemoniaceae,Polemoniaceae,family,2014-12-22,NA,NA,NA,NA,NA,,phlox
+ITIS:504488,POLINC,Poliomintha incana,Poliomintha incana,species,2011-09-22,Plantae,Magnoliopsida,Lamiales,Lamiaceae,Poliomintha,incana,frosted mint
+ITIS:22459,POPFRE,Populus fremontii,Populus fremontii,species,2011-12-08,Plantae,Magnoliopsida,Malpighiales,Salicaceae,Populus,fremontii,Fremonts cottonwood
+ITIS:38267,PREEXI,Prenanthella exigua,Prenanthella exigua,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Prenanthella,exigua,feeble prenanthella
+ITIS:836733,PURMEX,Purshia mexicana,Purshia mexicana,species,2011-12-08,Plantae,Magnoliopsida,Rosales,Rosaceae,Purshia,mexicana,Mexican cliffrose
+ITIS:19337,QUEGAM,Quercus gambelii,Quercus gambelii,species,2012-01-27,Plantae,Magnoliopsida,Fagales,Fagaceae,Quercus,gambelii,Gambels oak
+ITIS:529960,QUEWEL,Quercus welshii,Quercus havardii tuckeri,variety,2012-01-27,Plantae,Magnoliopsida,Fagales,Fagaceae,Quercus,havardii,sand shinoak
+ITIS:18558,RANSPP,Ranunculus,Ranunculus,genus,2011-06-29,NA,NA,NA,NA,NA,,buttercup
+ITIS:18649,RANTES,Ranunculus testiculatus,Ranunculus testiculatus,species,2011-06-29,Plantae,Magnoliopsida,Ranunculales,Ranunculaceae,Ranunculus,testiculatus,testiculate buttercup
+ITIS:28779,RHUARO,Rhus aromatica,Rhus aromatica,species,2012-06-27,Plantae,Magnoliopsida,Sapindales,Anacardiaceae,Rhus,aromatica,fragrant sumac
+ITIS:20962,RUMHYM,Rumex hymenosepalus,Rumex hymenosepalus,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Polygonaceae,Rumex,hymenosepalus,canaigre dock
+ITIS:22528,SALERI,Salix eriocephala,Salix eriocephala,species,2011-12-08,Plantae,Magnoliopsida,Malpighiales,Salicaceae,Salix,eriocephala,Missouri River willow
+ITIS:22529,SALEXI,Salix exigua,Salix exigua,species,2011-12-08,Plantae,Magnoliopsida,Malpighiales,Salicaceae,Salix,exigua,sandbar willow
+ITIS:520950,SALTRA,Salsola tragus,Salsola tragus,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Salsola,tragus,tumbleweed
+ITIS:20707,SARVER,Sarcobatus vermiculatus,Sarcobatus vermiculatus,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Sarcobataceae,Sarcobatus,vermiculatus,greasewood
+ITIS:42065,SCHARA,Schismus arabicus,Schismus arabicus,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Schismus,arabicus,Arabian schismus
+ITIS:19765,SCLWHI,Sclerocactus whipplei,Sclerocactus whipplei,species,2013-06-12,Plantae,Magnoliopsida,Caryophyllales,Cactaceae,Sclerocactus,whipplei,Whipples fishhook cactus
+NA,SEED,Unidentifiable seedling,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+ITIS:518150,SENMUL,Senecio multilobatus,Packera multilobata,species,2017-10-26,Plantae,Magnoliopsida,Asterales,Asteraceae,Packera,multilobata,lobeleaf groundsel
+ITIS:27780,SHEROT,Shepherdia rotundifolia,Shepherdia rotundifolia,species,2012-08-29,Plantae,Magnoliopsida,Rosales,Elaeagnaceae,Shepherdia,rotundifolia,roundleaf buffaloberry
+ITIS:20045,SILANT,Silene antirrhina,Silene antirrhina,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Caryophyllaceae,Silene,antirrhina,sleepy silene
+ITIS:23312,SISALT,Sisymbrium altissimum,Sisymbrium altissimum,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Sisymbrium,altissimum,tumbleweed mustard
+ITIS:503656,SMISTE,Smilacina stellata,Maianthemum stellatum,species,2011-02-24,Plantae,Magnoliopsida,Asparagales,Asparagaceae,Maianthemum,stellatum,starry Solomons seal
+ITIS:30411,SOLANA,Solanaceae,Solanaceae,family,2014-12-22,NA,NA,NA,NA,NA,,nightshades
+ITIS:36224,SOLCAN,Solidago canadensis,Solidago canadensis,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Solidago,canadensis,Canada goldenrod
+ITIS:26964,SOPSTE,Sophora stenophylla,Sophora stenophylla,species,2018-10-26,Plantae,Magnoliopsida,Fabales,Fabaceae,Sophora,stenophylla,fringeleaf necklacepod
+ITIS:21920,SPHCOC,Sphaeralcea coccinea,Sphaeralcea coccinea,species,2020-08-28,Plantae,Magnoliopsida,Malvales,Malvaceae,Sphaeralcea,coccinea,scarlet globemallow
+ITIS:21939,SPHGRO,Sphaeralcea grossulariifolia,Sphaeralcea grossulariifolia,species,2020-08-28,Plantae,Magnoliopsida,Malvales,Malvaceae,Sphaeralcea,grossulariifolia,gooseberryleaf globemallow
+ITIS:21947,SPHJAN,Sphaeralcea janeae,Sphaeralcea leptophylla,species,2020-08-28,Plantae,Magnoliopsida,Malvales,Malvaceae,Sphaeralcea,leptophylla,scaly globemallow
+ITIS:21953,SPHPAR,Sphaeralcea parvifolia,Sphaeralcea parvifolia,species,2020-08-28,Plantae,Magnoliopsida,Malvales,Malvaceae,Sphaeralcea,parvifolia,smallflower globemallow
+ITIS:21909,SPHSPP,Sphaeralcea,Sphaeralcea,genus,2020-08-28,NA,NA,NA,NA,NA,,globemallow
+ITIS:42128,SPOAIR,Sporobolus airoides,Sporobolus airoides,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Sporobolus,airoides,alkali sacaton
+NA,SPOCCF,"Sporobolus cryptandrus, contractus or flexuosus",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+ITIS:42131,SPOCON,Sporobolus contractus,Sporobolus contractus,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Sporobolus,contractus,spike dropseed
+ITIS:42132,SPOCRY,Sporobolus cryptandrus,Sporobolus cryptandrus,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Sporobolus,cryptandrus,sand dropseed
+ITIS:42137,SPOFLE,Sporobolus flexuosus,Sporobolus flexuosus,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Sporobolus,flexuosus,mesa dropseed
+ITIS:42138,SPOGIG,Sporobolus giganteus,Sporobolus giganteus,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Sporobolus,giganteus,giant dropseed
+ITIS:23329,STAPIN,Stanleya pinnata,Stanleya pinnata,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Stanleya,pinnata,golden princes plume
+ITIS:38445,STEEXI,Stephanomeria exigua,Stephanomeria exigua,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Stephanomeria,exigua,small wirelettuce
+ITIS:507974,STICOM,Stipa comata,Hesperostipa comata,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Hesperostipa,comata,needleandthread
+ITIS:507943,STIHYM,Stipa hymenoides,Achnatherum hymenoides,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Achnatherum,hymenoides,Indian ricegrass
+ITIS:784239,STISPE,Stipa speciosa,Pappostipa speciosa,species,2010-11-30,Plantae,Magnoliopsida,Poales,Poaceae,Pappostipa,speciosa,NA
+ITIS:42158,STISPP,Stipa,Stipa,genus,2010-11-30,NA,NA,NA,NA,NA,,needlegrass
+ITIS:23348,STRCOR,Streptanthus cordatus,Streptanthus cordatus,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Streptanthus,cordatus,heartleaf twistflower
+ITIS:23333,STRLON,Streptanthella longirostris,Streptanthella longirostris,species,2011-08-30,Plantae,Magnoliopsida,Brassicales,Brassicaceae,Streptanthella,longirostris,longbeak streptanthella
+ITIS:20669,SUATOR,Suaeda torreyana,Suaeda nigra,species,2011-08-30,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Suaeda,nigra,bush seepweed
+ITIS:502650,SWEALB,Swertia albomarginata,Frasera albomarginata,species,2011-07-25,Plantae,Magnoliopsida,Gentianales,Gentianaceae,Frasera,albomarginata,desert frasera
+ITIS:30107,SWESPP,Swertia,Swertia,genus,2011-07-25,NA,NA,NA,NA,NA,,felwort
+ITIS:502657,SWEUTA,Swertia utahensis,Frasera paniculata,species,2011-07-25,Plantae,Magnoliopsida,Gentianales,Gentianaceae,Frasera,paniculata,Utah elkweed
+ITIS:35334,SYMLON,Symphoricarpos longiflorus,Symphoricarpos longiflorus,species,2011-08-30,Plantae,Magnoliopsida,Dipsacales,Caprifoliaceae,Symphoricarpos,longiflorus,longleaf snowberry
+ITIS:22308,TAMCHI,Tamarix chinensis,Tamarix chinensis,species,2021-02-20,Plantae,Magnoliopsida,Caryophyllales,Tamaricaceae,Tamarix,chinensis,tamarix
+ITIS:38499,TETSPI,Tetradymia spinosa,Tetradymia spinosa,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Tetradymia,spinosa,shortspine horsebrush
+ITIS:38528,THESUB,Thelesperma subnudum,Thelesperma subnudum,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Thelesperma,subnudum,Navajo tea
+ITIS:505497,THYPEN,Thymophylla pentachaeta,Thymophylla pentachaeta,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Thymophylla,pentachaeta,fiveneedle pricklyleaf
+ITIS:505519,TIQLAT,Tiquilia latior,Tiquilia latior,species,2011-12-08,Plantae,Magnoliopsida,Boraginales,Ehretiaceae,Tiquilia,latior,matted crinklemat
+ITIS:38538,TOWANN,Townsendia annua,Townsendia annua,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Townsendia,annua,annual Townsend daisy
+ITIS:38549,TOWINC,Townsendia incana,Townsendia incana,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Townsendia,incana,hoary Townsend daisy
+ITIS:38564,TRADUB,Tragopogon dubius,Tragopogon dubius,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Tragopogon,dubius,yellow salsify
+NA,UNKPF,Unidentifiable perennial forb species,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,UNKSPP,Unidentifiable plant species,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+ITIS:780254,VANSTY,Vanclevea stylosa,Chrysothamnus stylosus,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Chrysothamnus,stylosus,pillar false gumweed
+ITIS:530878,XYLIMB,Xylorhiza imberbis,Xylorhiza tortifolia imberbis,variety,2010-10-05,NA,NA,NA,NA,NA,,imberis woodyaster
+ITIS:38701,XYLVEN,Xylorhiza venusta,Xylorhiza venusta,species,2010-10-05,Plantae,Magnoliopsida,Asterales,Asteraceae,Xylorhiza,venusta,charming woodyaster
+ITIS:43131,YUCANG,Yucca angustissima,Yucca angustissima,species,2011-02-24,Plantae,Magnoliopsida,Asparagales,Asparagaceae,Yucca,angustissima,narrowleaf yucca
+ITIS:43134,YUCBAC,Yucca baccata,Yucca baccata,species,2011-02-24,Plantae,Magnoliopsida,Asparagales,Asparagaceae,Yucca,baccata,banana yucca
+ITIS:43144,YUCHAR,Yucca harrimaniae,Yucca harrimaniae,species,2011-02-24,Plantae,Magnoliopsida,Asparagales,Asparagaceae,Yucca,harrimaniae,Spanish bayonet
+ITIS:43116,YUCSPP,Yucca,Yucca,genus,2011-02-24,NA,NA,NA,NA,NA,,yucca
+ITIS:20689,ZUCBRA,Zuckia brandegeei,Grayia brandegeei,species,2014-06-26,Plantae,Magnoliopsida,Caryophyllales,Amaranthaceae,Grayia,brandegeei,spineless hopsage
