@@ -1,8 +1,10 @@
 library(here)
 library(tidyverse)
 
-### ANALYSIS ###
+### CALCULATE PERCENT COVER ###
+# Data source:
 # https://irma.nps.gov/DataStore/Reference/Profile/2305079
+
 # Load plants lookup table
 tlu_plants <- read_csv(here('NCPN_IntegratedUplands_PlantsLookup.csv')) %>%
   select(c(Master_Plant_Code, Master_Common_Name))
@@ -13,13 +15,13 @@ arches_veg <- read_csv(
   ) %>%
   filter(Unit_Code == 'ARCH')
 
-# Save CSV so the data can be uploaded to GitHub
+# Save CSV so the raw data can be uploaded to GitHub
 write.csv(arches_veg, 
           file = here('data/NCPN_IntegratedUplands_PointIntercept_ARCH.csv'),
           row.names = FALSE)
 
-# Remove duplicate species at one point before counting. There are 100 points 
-# per transect, so the counts equals the percent cover.
+# Remove duplicate species at one point before counting.
+# Calculate cover percentage and assign cover class for later use
 arches_counts <- arches_veg %>%
   filter(!is.na(Scientific_Name), Status == 1) %>%
   select(Start_Date:Layer, Species, Scientific_Name) %>%
@@ -39,7 +41,15 @@ arches_counts <- arches_veg %>%
       right = TRUE
     ),
     Cover_Class = as.numeric(Cover_Class)
-  )
+  ) %>%
+  mutate(Visit_Year = year(Start_Date))
+
+### EXPLORE THE DATA ###
+# Since there are 84 plots, I wanted to explore the data to find the a 
+# meaningful but efficient way to show vegetation cover changes over time
+
+## INITIAL EXPLORATION
+# MAXIMUM CHANGE PER PLOT
 
 # Calculate percent change for each species
 plots_veg_cover <- arches_counts %>%
@@ -66,7 +76,9 @@ arches_high_change <- arches_counts %>%
   filter(Plot_ID %in% plots_change$Plot_ID) %>%
   arrange(Plot_ID, Start_Date)
 
-# Calculate species trends
+# SPECIES-LEVEL TRENDS BY PLOT
+
+# Calculate species trends to see if any other plots stand out
 plot_trend <- arches_counts %>%
   mutate(Visit_Year = year(Start_Date)) %>%
   group_by(Plot_ID, Species, Scientific_Name) %>%
@@ -78,8 +90,95 @@ plot_trend <- arches_counts %>%
   ) %>%
   left_join(tlu_plants, by = join_by(Species == Master_Plant_Code))
 
+# EXPLORE SELECT PLOTS
 
-### 
+# After reviewing the species trends, I decided to add plot 92
+# to the high change table
+arches_change_plots <- arches_high_change %>%
+  bind_rows(
+    arches_counts %>% filter(Plot_ID == 92)
+  )
+
+# Create and save plots of species change over time to visually explore
+lapply(unique(arches_high_change$Plot_ID), function(plot_id) {
+  
+  plot_data <- arches_high_change %>%
+    filter(Plot_ID == plot_id) %>%
+    arrange(Visit_Year)
+  
+  if (nrow(plot_data) == 0) return(NULL)
+  
+  ggplot(plot_data, aes(x = Visit_Year, y = Cover_pct, fill = Species)) +
+    geom_col(position = "stack") +
+    scale_fill_viridis_d(option = 'turbo') +
+    labs(title = paste0('Vegetation Cover for Plot ', plot_id),
+                  x = "Year",
+                  y = "Percent Cover",
+                  fill = "Species") +
+    theme_minimal()
+  
+  ggsave(paste0('plots/Plot_', plot_id, '.png'))
+})
+
+## FINAL PRODUCT
+# After reviewing the selected plots, it was clear that BRTE showed the most 
+# change over the sampling years.  Without spatial data or knowledge of 
+# management actions, I felt the best way to communicate vegetation cover 
+# changes was to show park-level species change instead of plot level.
+
+# Calculate area covered by each species (each plot is 250 sq. meters)
+arches_veg_area <- arches_counts %>%
+  mutate(Cover_Area_m2 = Cover_pct / 100 * 250)
+
+# Calculate area sampled each year
+arches_area_year <- arches_veg_area %>%
+  distinct(Visit_Year, Plot_ID) %>%
+  group_by(Visit_Year) %>%
+  summarize(
+    Area_Sampled_m2 = n() * 250,
+    .groups = 'drop'
+  )
+
+# Calculate total cover area for each species
+species_area_year <- arches_veg_area %>%
+  group_by(Visit_Year, Species) %>%
+  summarize(
+    Species_Area_m2 = sum(Cover_Area_m2),
+    .groups = 'drop'
+  ) %>%
+  left_join(arches_area_year, by = join_by(Visit_Year)) %>%
+  mutate(
+    Total_Cover_pct = Species_Area_m2 / Area_Sampled_m2 * 100
+  )
+
+# Only keep the top five species cover area per year because there are 106
+# different species
+species_area_top <- species_area_year %>%
+  group_by(Visit_Year) %>%
+  arrange(desc(Total_Cover_pct)) %>%
+  slice_head(n = 5) %>%
+  ungroup()
+
+# Create and save plot
+ggplot(
+  species_area_top, 
+  aes(x = Visit_Year, y = Total_Cover_pct, fill = Species)
+) +
+  geom_col(position = "stack") +
+  scale_fill_viridis_d(option = 'turbo') +
+  labs(title = paste0('Vegetation Cover Area - Top 5 Species Each Year'),
+       x = "Year",
+       y = "Percent Cover",
+       fill = "Species") +
+  theme_minimal()
+
+ggsave(here('plots/species_area.png'))
+
+
+### FAILED ATTEMPT TO ADD COORDINATES ###
+# The SEUG dataset includes upland veg data from ARCH, so I attempted to join 
+# the location ID from the SEUG data to the NCPN data, so I could get plot 
+# coordinates, but it didn't work
 seug_taxa <- read_csv(here('data/taxaList.csv')) %>%
   select(taxaCode:scientificName_ITIS)
 
