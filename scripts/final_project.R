@@ -67,10 +67,14 @@ plots_change <- plots_veg_cover %>%
   group_by(Plot_ID) %>%
   summarize(
     Change_total = sum(Change_cover, na.rm = TRUE),
+    Num_species = sum(Change_cover > 0, na.rm = TRUE),
+    Max_species_change = max(Change_cover, na.rm = TRUE),
     .groups = 'drop'
   ) %>%
   arrange(desc(Change_total)) %>%
   slice_head(n = 5)
+
+# find max species and add it to table above
 
 # Select the data for the top five plots with change
 arches_high_change <- arches_counts %>%

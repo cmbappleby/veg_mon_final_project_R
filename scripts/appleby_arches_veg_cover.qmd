@@ -16,7 +16,7 @@ options(knitr.duplicate.label = "allow")
 
 # Install any missing packages
 list.of.packages <- c('tidyverse',  'sf', 'leaflet', 'here', 'DT',
-                      'bsicons', 'bslib'
+                      'gridExtra', 'cowplot', 'viridisLite'
                       )
 
 # Load packages
@@ -59,7 +59,8 @@ m
 ```{r data import setup, include = F}
 
 ### VEG DATA ###
-
+change_plots <- read_csv(here('data/change_plots.csv'))
+species_area <- read_csv(here('data/species_area.csv'))
 
 ### NCPN PARK BOUNDARIES ###
 ncpn_units <-  st_read(here('data/NCPN_unit_boundaries/NCPN_unit_boundaries.shp')) %>% 
@@ -197,7 +198,7 @@ Witwicki D, Thomas H, Weissinger R, Wight A, Topp S, Garman SL, Miller ME. 2017.
 ![Transect Points Associated with Sample Datasheet](../images/transect_points_example.png){width="95%"}
 Source: [https://irma.nps.gov/DataStore/DownloadFile/631393](https://irma.nps.gov/DataStore/DownloadFile/631393)
 
-# Data & Analysis {orientation='rows'}
+# Analysis {orientation='rows'}
 
 ## Row {height='20%'}
 
@@ -208,9 +209,7 @@ Source: [https://irma.nps.gov/DataStore/DownloadFile/631393](https://irma.nps.go
 list(
   icon = 'file-spreadsheet',
   color = 'light',
-  value = '1,969',
-  max_height = '80%',
-  fill = FALSE
+  value = '1,969'
 )
 ```
 
@@ -221,8 +220,7 @@ list(
 list(
   icon = 'pin-map-fill',
   color = 'warning',
-  value = '84',
-  height = '80%'
+  value = '84'
 )
 ```
 
@@ -233,14 +231,13 @@ list(
 list(
   icon = 'flower1',
   color = 'success',
-  value = '106',
-  height = '80%'
+  value = '106'
 )
 ```
 
 ## Row {Height='80%'}
 
-### Column {width='50%'}
+### Column {width='45%'}
 
 ::: {.card title='Analysis'}
 I downloaded the [NCPN point-intercept CSV](https://irma.nps.gov/DataStore/Reference/Profile/2305079), read it into R, 
@@ -262,15 +259,67 @@ changes was to show park-level species change instead of plot-level. I converted
 the vegetation cover from percentage to area, summed the cover area by species 
 and year, and then calculated the percent area change in vegetation cover. Since 
 there are 106 different species, I only included the top five species per year 
-for my final plot.
+for my final graph.
 :::
 
-### Column {.tabset width='50%'}
+### Column {.tabset width='55%'}
 
-#### High Change Plots
-Look at these high change plots!
+#### Veg Cover High Change Plots
 
-#### Other Stuff
+```{r change_plot, include = F}
+all_species <- unique(change_plots$Species)
+
+change_plots$Species <- factor(change_plots$Species, levels = all_species)
+
+species_colors <- setNames(turbo(length(all_species)), all_species)
+
+graphs_change <- lapply(unique(change_plots$Plot_ID), function(plot_id) {
+  
+  plot_data <- change_plots %>%
+    filter(Plot_ID == plot_id) %>%
+    arrange(Visit_Year)
+  
+  if (nrow(plot_data) == 0) return(NULL)
+  
+  ggplot(plot_data, 
+         aes(x = factor(Visit_Year), y = Cover_pct, fill = Species)) +
+    geom_col(position = "stack") +
+    scale_fill_manual(values = species_colors, drop = FALSE) +
+    labs(title = paste0('Plot ', plot_id),
+                  x = "Year",
+                  y = "Percent Cover",
+                  fill = "Species") +
+    theme_minimal() +
+    theme(legend.position = 'none')
+})
+
+legend_graph <- ggplot(change_plots, 
+                       aes(x = Visit_Year, y = Cover_pct, fill = Species)) +
+  geom_col(position = "stack") +
+    scale_fill_manual(values = species_colors, drop = FALSE) +
+    theme_minimal()
+
+legend_all <- get_legend(legend_graph)
+```
+
+```{r render_change_graphs}
+graphs <- plot_grid(
+  plotlist = graphs_change,
+  ncol = 3,
+  nrow = 2,
+  align = 'hv'
+)
+
+graphs_legend <- plot_grid(
+  plotlist = list(graphs, ggdraw(legend_all)),
+  ncol = 2,
+  rel_widths = c(8, 2)
+)
+
+graphs_legend
+```
+
+#### Supporting Tables
 Look at this other stuff!
 
 
