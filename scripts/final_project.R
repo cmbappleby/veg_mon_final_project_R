@@ -20,6 +20,7 @@ write.csv(arches_veg,
           file = here('data/NCPN_IntegratedUplands_PointIntercept_ARCH.csv'),
           row.names = FALSE)
 
+# Keep only live vegetation records
 # Remove duplicate species at one point before counting.
 # Calculate cover percentage and assign cover class for later use
 arches_counts <- arches_veg %>%

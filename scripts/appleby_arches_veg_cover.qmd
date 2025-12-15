@@ -15,7 +15,8 @@ knitr::opts_chunk$set(echo = FALSE, message = F, warning = F)
 options(knitr.duplicate.label = "allow")
 
 # Install any missing packages
-list.of.packages <- c('tidyverse',  'sf', 'leaflet', 'here', 'DT'
+list.of.packages <- c('tidyverse',  'sf', 'leaflet', 'here', 'DT',
+                      'bsicons', 'bslib'
                       )
 
 # Load packages
@@ -196,22 +197,86 @@ Witwicki D, Thomas H, Weissinger R, Wight A, Topp S, Garman SL, Miller ME. 2017.
 ![Transect Points Associated with Sample Datasheet](../images/transect_points_example.png){width="95%"}
 Source: [https://irma.nps.gov/DataStore/DownloadFile/631393](https://irma.nps.gov/DataStore/DownloadFile/631393)
 
-# Data & Analysis
+# Data & Analysis {orientation='rows'}
 
-## Column data {width='50%'}
+## Row {height='20%'}
 
-::: {.card title='Point-Intercept Data'}
-Words about the data.
-The Uplands point intercept data is available at the [NPS DataStore](https://irma.nps.gov/DataStore/Reference/Profile/2305079). 
-:::
+### Column {.flow width='20%'}
+```{r}
+value_box(
+  title = 'NCPN PI Records',
+  showcase = bs_icon('archive-fill'),
+  value = '1.6 Billion',
+  theme = 'light'
+)
+```
 
-## Column analysis {width='50%'}
+### Column {.flow width='20%'}
+```{r}
+#| content: valuebox
+#| title: 'Arches Records'
+list(
+  icon = 'folder-fill',
+  color = 'primary',
+  value = '118,664',
+  height = '80%'
+)
+```
+
+### Column {.flow width='20%'}
+```{r}
+#| content: valuebox
+#| title: 'Veg Records'
+list(
+  icon = 'leaf',
+  color = 'success',
+  value = '1,969',
+  height = '80%'
+)
+```
+
+### Column {.flow width='20%'}
+```{r}
+#| content: valuebox
+#| title: 'Plots'
+list(
+  icon = 'pin-map-fill',
+  color = 'warning',
+  value = '84',
+  height = '80%'
+)
+```
+
+### Column {.flow width='20%'}
+```{r}
+#| content: valuebox
+#| title: 'Different Species'
+list(
+  icon = 'flower1',
+  color = 'success',
+  value = '106',
+  height = '80%'
+)
+```
+
+## Row {Height='80%'}
+
+### Column {width='50%'}
 
 ::: {.card title='Analysis'}
 I downloaded the point-intercept CSV, read it into R, filtered for only records 
 from Arches National Park, and only live vegetation records. Before calculating 
 percent cover, I removed any duplicate species records for a transect point.
 :::
+
+### Column {.tabset width='50%'}
+
+#### High Change Plots
+Look at these high change plots!
+
+#### Other Stuff
+Look at this other stuff!
+
 
 # Results
 
