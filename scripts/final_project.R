@@ -100,10 +100,13 @@ arches_change_plots <- arches_high_change %>%
     arches_counts %>% filter(Plot_ID == 92)
   )
 
+# Save to CSV to use in dashboard
+write.csv(arches_change_plots, here('data/change_plots.csv'), row.names = FALSE)
+
 # Create and save plots of species change over time to visually explore
-lapply(unique(arches_high_change$Plot_ID), function(plot_id) {
+lapply(unique(arches_change_plots$Plot_ID), function(plot_id) {
   
-  plot_data <- arches_high_change %>%
+  plot_data <- arches_change_plots %>%
     filter(Plot_ID == plot_id) %>%
     arrange(Visit_Year)
   
@@ -159,6 +162,9 @@ species_area_top <- species_area_year %>%
   arrange(desc(Total_Cover_pct)) %>%
   slice_head(n = 5) %>%
   ungroup()
+
+# Write to CSV to use in dashboard
+write.csv(species_area_top, here('data/species_area.csv'), row.names = FALSE)
 
 # Create and save plot
 ggplot(
