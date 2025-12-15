@@ -254,6 +254,11 @@ grasslands_species_area_yr <- species_area %>%
   arrange(desc(Total_Cover_pct)) %>%
   slice_head(n = 5) %>%
   ungroup()
+
+# Save CSV for use in dashboard
+write.csv(grasslands_species_area_yr,
+          here('data/species_top_grasslands.csv'),
+          row.names = FALSE)
   
 # Create graph and save
 ggplot(data = grasslands_species_area_yr %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
