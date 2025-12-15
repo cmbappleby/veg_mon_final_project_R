@@ -50,17 +50,52 @@ arches_counts <- arches_veg %>%
 # meaningful but efficient way to show vegetation cover changes over time
 
 ## INITIAL EXPLORATION
-# MAXIMUM CHANGE PER PLOT
+# SPECIES WITH THE MOST CHANGE
 
-# Calculate percent change for each species
+# Calculate percent change for each species using min and max values, regardless
+# of year. Keep species with >= 10% change.
 plots_veg_cover <- arches_counts %>%
-  group_by(Plot_ID, Species) %>%
+  group_by(Plot_ID, Species, Scientific_Name) %>%
   summarize(
-    Max_cover = max(Cover_pct, na.rm = TRUE),
-    Min_cover = min(Cover_pct, na.rm = TRUE),
-    Change_cover = Max_cover - Min_cover,
+    Max_Cover = max(Cover_pct, na.rm = TRUE),
+    Min_Cover = min(Cover_pct, na.rm = TRUE),
+    Cover_Change = Max_Cover - Min_Cover,
     .groups = 'drop'
-  )
+  ) %>%
+  filter(Cover_Change >= 10) %>%
+  arrange(desc(Cover_Change))
+
+# Calculate percent change for each species from first to last survey year. Keep
+# species with >= 10% absolute change.
+plot_trend <- arches_counts %>%
+  mutate(Visit_Year = year(Start_Date)) %>%
+  group_by(Plot_ID, Species, Scientific_Name) %>%
+  summarize(
+    First_Yr_Cover = Cover_pct[Visit_Year == min(Visit_Year)],
+    Last_Yr_Cover = Cover_pct[Visit_Year == max(Visit_Year)],
+    Cover_Change = Last_Yr_Cover - First_Yr_Cover,
+    .groups = 'drop'
+  ) %>%
+  mutate(
+    Trend = case_when(
+      Cover_Change > 0 ~ 'Increase',
+      Cover_Change < 0 ~ 'Decrease',
+      Cover_Change == 0 ~ 'None'
+      ),
+    Cover_Change = abs(Cover_Change)
+  ) %>%
+  filter(Cover_Change >= 10) %>%
+  mutate(Cover_Change = if_else(Trend == 'Decrease', 
+                                Cover_Change * -1, 
+                                Cover_Change)
+  ) %>%
+  arrange(Cover_Change)
+
+
+# Save as CSV to use in dashboard
+write.csv(plots_veg_cover, 
+          here('data/plots_veg_cover.csv'), 
+          row.names = FALSE)
 
 # Calculate total change for each plot and keep the top five
 plots_change <- plots_veg_cover %>%
@@ -74,14 +109,10 @@ plots_change <- plots_veg_cover %>%
   arrange(desc(Change_total)) %>%
   slice_head(n = 5)
 
-# find max species and add it to table above
-
 # Select the data for the top five plots with change
 arches_high_change <- arches_counts %>%
   filter(Plot_ID %in% plots_change$Plot_ID) %>%
   arrange(Plot_ID, Start_Date)
-
-# SPECIES-LEVEL TRENDS BY PLOT
 
 # Calculate species trends to see if any other plots stand out
 plot_trend <- arches_counts %>%
@@ -94,6 +125,9 @@ plot_trend <- arches_counts %>%
     .groups = 'drop'
   ) %>%
   left_join(tlu_plants, by = join_by(Species == Master_Plant_Code))
+
+# Write to CSV to use in dashboard
+write.csv(plot_trend, here('data/plot_trend.csv'), row.names = FALSE)
 
 # EXPLORE SELECT PLOTS
 
