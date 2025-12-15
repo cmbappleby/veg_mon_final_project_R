@@ -61,6 +61,8 @@ m
 ### VEG DATA ###
 change_plots <- read_csv(here('data/change_plots.csv'))
 species_area <- read_csv(here('data/species_area.csv'))
+plots_cover_change_species <- read_csv(here('data/plots_veg_cover.csv'))
+species_trend <- read_csv(here('data/plot_trend.csv'))
 
 ### NCPN PARK BOUNDARIES ###
 ncpn_units <-  st_read(here('data/NCPN_unit_boundaries/NCPN_unit_boundaries.shp')) %>% 
@@ -244,9 +246,9 @@ I downloaded the [NCPN point-intercept CSV](https://irma.nps.gov/DataStore/Refer
 filtered for only Arches National Park and live vegetation 
 records, then calculated percent cover by species to the plot level.
 
-Since there are 84 plots, I explored the data to find a meaningful way to show 
-vegetation cover change over time for my final product. First, I calculated the 
-maximum change for 
+Since there are 84 plots, I explored the data to look for a meaningful way to 
+show vegetation cover change over time for my final product. First, I calculated
+the maximum change for 
 each species per plot, summed the total change per plot, and reviewed the 
 top five plots with the highest change. Next, I calculated the species change 
 between the first and last survey years and reviewed the plots/species with the 
@@ -320,9 +322,46 @@ graphs_legend
 ```
 
 #### Supporting Tables
-Look at this other stuff!
 
+```{r change_plots, include = F}
+# Find the species with the highest change per plot
+high_species_change <- plots_cover_change_species %>%
+  group_by(Plot_ID) %>%
+  slice_max(Change_cover, n = 1) %>%
+  select(Plot_ID, Species, Change_cover)
+
+# Sum change by plot, add species change
+change_plots_mod <- plots_cover_change_species %>% 
+  filter(Plot_ID %in% c(34, 38, 56, 88, 91, 92)) %>%
+  group_by(Plot_ID) %>%
+  summarize(
+    Change_pct = sum(Change_cover, na.rm = TRUE),
+    Num_Species = sum(Change_cover > 0, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(Plot_Change_pct)) %>%
+  left_join(high_species_change, by = join_by(Plot_ID)) %>%
+  mutate(Top_Species_Change_pct = paste0(Species, ' - ', Change_cover)) %>%
+  select(-c(Change_cover, Species))
+
+high_trend_down <- species_trend %>%
+  arrange(Cover_change) %>%
+  slice_head(n = 5)
+
+high_trend <- species_trend %>%
+  arrange(desc(Cover_change)) %>%
+  slice_head(n = 5) %>%
+  bind_rows(high_trend_down) %>%
+  select(c(Plot_ID, Species, Cover_change)) %>%
+  rename(Cover_Change_pct = Cover_change)
+```
+
+```{r plots_dt}
+datatable(change_plots_mod, rownames = FALSE, options = list(searching = FALSE))
+datatable(high_trend, rownames = FALSE, options = list(searching = FALSE))
+```
 
 # Results
 
 # Discussion
+
