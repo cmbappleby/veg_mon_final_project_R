@@ -243,9 +243,26 @@ list(
 ### Column {width='50%'}
 
 ::: {.card title='Analysis'}
-I downloaded the point-intercept CSV, read it into R, filtered for only records 
-from Arches National Park, and only live vegetation records. Before calculating 
-percent cover, I removed any duplicate species records for a transect point.
+I downloaded the [NCPN point-intercept CSV](https://irma.nps.gov/DataStore/Reference/Profile/2305079), read it into R, 
+filtered for only Arches National Park and live vegetation 
+records, then calculated percent cover by species to the plot level.
+
+Since there are 84 plots, I explored the data to find a meaningful way to show 
+vegetation cover change over time for my final product. First, I calculated the 
+maximum change for 
+each species per plot, summed the total change per plot, and reviewed the 
+top five plots with the highest change. Next, I calculated the species change 
+between the first and last survey years and reviewed the plots/species with the 
+greatest change. After this review, I added one 
+additional plot to my list of plots with the highest change.
+
+Without spatial data or knowledge of
+management actions, I felt the best way to communicate vegetation cover
+changes was to show park-level species change instead of plot-level. I converted
+the vegetation cover from percentage to area, summed the cover area by species 
+and year, and then calculated the percent area change in vegetation cover. Since 
+there are 106 different species, I only included the top five species per year 
+for my final plot.
 :::
 
 ### Column {.tabset width='50%'}
