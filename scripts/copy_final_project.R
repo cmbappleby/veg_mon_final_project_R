@@ -15,6 +15,18 @@ arches_veg <- read_csv(
   ) %>%
   filter(Unit_Code == 'ARCH')
 
+eco_strata <- arches_veg %>%
+  select(Plot_ID,Master_Stratification, Primary_Eco_Site) %>%
+  distinct() %>%
+  rename(Eco_Site = Primary_Eco_Site) %>%
+  mutate(Eco_Site_Desc = case_when(
+    Eco_Site == 'SDSL215' ~ 'Semidesert Sandy Loam (Four-wing Saltbrush)',
+    Eco_Site == 'SDS210' ~ 'Semidesert Sand (Blackbrush)',
+    Eco_Site == 'SDSSL236' ~ 'Semidesert Shallow Sandy Loam (UT Juniper-Blackbrush)',
+    Eco_Site == 'SDS212' ~ 'Semidesert Sand (Four-wing Saltbrush)',
+    Eco_Site == 'SDSL218' ~ 'Semidesert Sandy Loam (Blackbrush)'
+  ))
+
 # Keep only live vegetation records
 # Remove duplicate species at one point before counting.
 # Calculate cover percentage and assign cover class for later use.
@@ -40,24 +52,16 @@ arches_cover <- arches_veg %>%
   ) %>%
   mutate(Visit_Year = year(Start_Date))
 
-# Save CSV for use in dashboard
-write.csv(arches_cover, here('data/arches_cover.csv'), row.names = FALSE)
-
 ### EXPLORE THE DATA ###
 # Since there are 84 plots, I wanted to explore the data to find the a 
 # meaningful but efficient way to show vegetation cover changes over time or
 # identify particular plots to focus on
 
-# Create a table with Plot IDs and Master Stratification
-eco_strata <- arches_veg %>%
-  select(Plot_ID, Master_Stratification) %>%
-  distinct()
-
 ## SPECIES WITH THE MOST CHANGE ##
 
 # Calculate percent change for each species using min and max values, regardless
 # of year. Keep species with >= 10% change.
-species_change <- arches_cover %>%
+species_change_eco <- arches_cover %>%
   group_by(Plot_ID, Species, Scientific_Name) %>%
   summarize(
     Max_Cover = max(Cover_pct, na.rm = TRUE),
@@ -67,7 +71,8 @@ species_change <- arches_cover %>%
   ) %>%
   filter(Cover_Change >= 10) %>%
   arrange(desc(Cover_Change)) %>%
-  left_join(eco_strata, by = join_by(Plot_ID))
+  left_join(eco_strata %>% select(c(Plot_ID, Master_Stratification)), 
+            by = join_by(Plot_ID))
 
 # Save as CSV to use in dashboard
 write.csv(species_change, 
@@ -76,7 +81,7 @@ write.csv(species_change,
 
 # Calculate percent change for each species from first to last survey year. Keep
 # species with >= 10% absolute change.
-species_trend <- arches_cover %>%
+species_trend_eco <- arches_cover %>%
   mutate(Visit_Year = year(Start_Date)) %>%
   group_by(Plot_ID, Species, Scientific_Name) %>%
   summarize(
@@ -99,7 +104,9 @@ species_trend <- arches_cover %>%
                                 Cover_Change)
   ) %>%
   arrange(Cover_Change) %>%
-  left_join(eco_strata, by = join_by(Plot_ID))
+  left_join(eco_strata %>% select(c(Plot_ID, Master_Stratification)), 
+            by = join_by(Plot_ID)) %>%
+  select(-Trend)
 
 # Write to CSV to use in dashboard
 write.csv(species_trend, 
@@ -109,8 +116,7 @@ write.csv(species_trend,
 ## EXPLORATION CONCLUSION ##
 # The top three species with change are BRTE, PLPA2, and SATR12. The plots that
 # that appear most frequently between both exploration tables were 
-# 26, 91, 92, and 101. The only master stratification class was grasslands. My 
-# analysis focuses on these species, plots, and strata.
+# 26, 91, 92, and 101. My analysis focuses on these species and plots.
 
 ### ANALYSIS & FINAL PRODUCTS ###
 
@@ -121,11 +127,12 @@ plots <- c(26, 91, 92, 101)
 lapply(plots, function(plot_id) {
   
   plot_data <- arches_cover %>%
-    filter(Plot_ID == plot_id)
+    filter(Plot_ID == plot_id) %>%
+    mutate(yr_date = ymd(Visit_Year, truncated = 2L))
   
   if (nrow(plot_data) == 0) return(NULL)
   
-  g <- ggplot(plot_data, aes(x = Start_Date, y = Cover_pct, fill = Species)) +
+  ggplot(plot_data, aes(x = yr_date, y = Cover_pct, fill = Species)) +
     geom_col(position = "stack") +
     scale_x_date(
       date_breaks = '1 year', date_labels = '%Y'
@@ -138,19 +145,13 @@ lapply(plots, function(plot_id) {
     theme_minimal() +
     theme(panel.grid.minor.x = element_blank())
   
-  if (length(unique(plot_data$Species)) > 8) {
-    g + theme(legend.text = element_text(size = 7),
-              legend.key.size = unit(1, 'line')) +
-      guides(fill = guide_legend(ncol = 2))
-  }
-  
   ggsave(paste0('plots/Plot_', plot_id, '.png'))
 })
 
 # Note: After looking at the plots, I chose not to include Plot 26 in the
 # dashboard.
 
-## PARK-LEVEL CHANGE OF SELECT SPECIES, TOP FIVE SPECIES & GRASSLANDS ##
+## PARK-LEVEL CHANGE OF SELECT SPECIES & TOP FIVE SPECIES ##
 
 # Calculate area covered by each species (each plot is 250 sq. meters)
 species_area <- arches_cover %>%
@@ -232,59 +233,14 @@ ggplot(data = species_area_top %>% mutate(yr_date = ymd(Visit_Year, truncated = 
        fill = "Species") +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(),
-        axis.text.x = element_text(angle = 45),
-        legend.text = element_text(size = 7),
-        legend.key.size = unit(1, 'line')) +
-  guides(fill = guide_legend(ncol = 2))
+        axis.text.x = element_text(angle = 45))
 
 ggsave(here('plots/species_area_top.png'))
 
-# Grasslands top five species cover per year
-grasslands_species_area_yr <- species_area %>%
-  left_join(eco_strata, by = join_by(Plot_ID)) %>%
-  filter(Master_Stratification == 'Grassland') %>%
-  group_by(Visit_Year, Species) %>%
-  summarize(
-    Species_Area_m2 = sum(Cover_Area_m2),
-    .groups = 'drop'
-  ) %>%
-  left_join(tot_plot_area, by = join_by(Visit_Year)) %>%
-  mutate(
-    Total_Cover_pct = Species_Area_m2 / Area_Sampled_m2 * 100
-  ) %>%
-  group_by(Visit_Year) %>%
-  arrange(desc(Total_Cover_pct)) %>%
-  slice_head(n = 5) %>%
-  ungroup()
-
-# Save CSV for use in dashboard
-write.csv(grasslands_species_area_yr,
-          here('data/species_top_grasslands.csv'),
-          row.names = FALSE)
-  
-# Create graph and save
-ggplot(data = grasslands_species_area_yr %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
-       aes(x = yr_date, y = Total_Cover_pct, fill = Species)
-  ) +
-  geom_col(position = "stack") +
-  scale_x_date(
-    date_breaks = '1 year', date_labels = '%Y'
-  ) +
-  scale_fill_viridis_d(option = 'turbo') +
-  labs(title = paste0('Arches Veg Cover Area - Grasslands\nTop 5 Species Each Year'),
-       x = "Year",
-       y = "Percent Cover",
-       fill = "Species") +
-  theme_minimal() +
-  theme(panel.grid.minor.x = element_blank(),
-        axis.text.x = element_text(angle = 45),
-        legend.text = element_text(size = 7),
-        legend.key.size = unit(1, 'line')
-        ) +
-  guides(fill = guide_legend(ncol = 2))
-  
-ggsave(here('plots/grassland_species_area_top.png'))
-
+grasslands <- arches_cover %>%
+  left_join(eco_strata %>% select(c(Plot_ID, Master_Stratification)),
+            by = join_by(Plot_ID)) %>%
+  filter(Master_Stratification == 'Grassland')
 
 ### FAILED ATTEMPT TO ADD COORDINATES ###
 # The SEUG dataset includes upland veg data from ARCH, so I attempted to join 
