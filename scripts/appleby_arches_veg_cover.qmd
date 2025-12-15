@@ -201,41 +201,20 @@ Source: [https://irma.nps.gov/DataStore/DownloadFile/631393](https://irma.nps.go
 
 ## Row {height='20%'}
 
-### Column {.flow width='20%'}
-```{r}
-value_box(
-  title = 'NCPN PI Records',
-  showcase = bs_icon('archive-fill'),
-  value = '1.6 Billion',
-  theme = 'light'
-)
-```
-
-### Column {.flow width='20%'}
-```{r}
-#| content: valuebox
-#| title: 'Arches Records'
-list(
-  icon = 'folder-fill',
-  color = 'primary',
-  value = '118,664',
-  height = '80%'
-)
-```
-
-### Column {.flow width='20%'}
+### Column {.flow width='33%'}
 ```{r}
 #| content: valuebox
 #| title: 'Veg Records'
 list(
-  icon = 'leaf',
-  color = 'success',
+  icon = 'file-spreadsheet',
+  color = 'light',
   value = '1,969',
-  height = '80%'
+  max_height = '80%',
+  fill = FALSE
 )
 ```
 
-### Column {.flow width='20%'}
+### Column {.flow width='34%'}
 ```{r}
 #| content: valuebox
 #| title: 'Plots'
@@ -247,10 +226,10 @@ list(
 )
 ```
 
-### Column {.flow width='20%'}
+### Column {.flow width='33%'}
 ```{r}
 #| content: valuebox
-#| title: 'Different Species'
+#| title: 'Species'
 list(
   icon = 'flower1',
   color = 'success',

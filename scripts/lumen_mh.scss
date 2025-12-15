@@ -430,4 +430,9 @@ a.list-group-item {
   }
 }
 
+.quarto-dashboard .bslib-value-box .value-box-value {
+  font-size: clamp(150%, 10cqw, 250%);
+  font-weight: 800;
+}
+
 // quarto-scss-analysis-annotation { "origin": null }
