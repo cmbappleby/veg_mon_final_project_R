@@ -59,10 +59,7 @@ m
 ```{r data import setup, include = F}
 
 ### VEG DATA ###
-change_plots <- read_csv(here('data/change_plots.csv'))
-species_area <- read_csv(here('data/species_area.csv'))
-plots_cover_change_species <- read_csv(here('data/plots_veg_cover.csv'))
-species_trend <- read_csv(here('data/plot_trend.csv'))
+
 
 ### NCPN PARK BOUNDARIES ###
 ncpn_units <-  st_read(here('data/NCPN_unit_boundaries/NCPN_unit_boundaries.shp')) %>% 
@@ -86,14 +83,13 @@ and communicate key information on park resources. The monitoring data helps
 park managers understand how the natural resources are changing over time, 
 enabling them to make science-based management decisions.
 
-Source: 
 Inventory and Monitoring Division (U.S. National Park Service). (n.d.). 
 Retrieved December 13, 2025, from [https://www.nps.gov/im/index.htm](https://www.nps.gov/im/index.htm)
 :::
 
-### Row ncpn {height='65%'}
+### Row ncpn {.tabset height='65%'}
 
-::: {.card title="Northern Colorado Plateau Network Uplands"}
+#### NCPN Uplands Vegetation & Soils Monitoring
 The Northern Colorado Plateau Network (NCPN) conducts monitoring 
 for 16 different park units. Upland Vegetation and Soils is considered a high 
 monitoring priority since most of land on the Colorado Plateau is upland 
@@ -108,30 +104,13 @@ management decisions. This analysis quantifies vegetation cover trends at Arches
 National Park as an example of how upland vegetation monitoring can 
 provide information for resource management and conservation efforts.
 
-Sources: 
 Witwicki D, Thomas H, Weissinger R, Wight A, Topp S, Garman SL, Miller ME. 2017. Upland vegetation and soils monitoring protocol for park units in the Northern Colorado Plateau Network: version 1.07. Natural Resource Report. NPS/NCPN/NRR—2017/1570. National Park Service. Fort Collins, Colorado
 [https://irma.nps.gov/DataStore/Reference/Profile/2248124](https://irma.nps.gov/DataStore/Reference/Profile/2248124)
 
 Upland Vegetation and Soils (U.S. National Park Service). (n.d.). Retrieved 
 December 13, 2025, from [https://www.nps.gov/im/ncpn/uplands.htm](https://www.nps.gov/im/ncpn/uplands.htm)
-:::
 
-## Column ncpn map {width='50%'}
-
-```{r ncpn_map}
-cat("title= Map of NCPN Park Units") 
-
-map_leaflet(ncpn_units, '38.931732', '-109.828180', zoom = 7, 'osm')
-
-```
-
-# Study Area
-
-## Column desc {width='45%'}
-
-### arches
-
-::: {.card title='Arches National Park'}
+#### Arches NP
 Arches National Park is located north of Moab in Southeast Utah and is part of 
 NCPN. Elevation in the park ranges from about 4,000 feet in the canyons to 
 5,200 feet on the rims. With an arid climate, the summers are hot and dry, and 
@@ -149,17 +128,27 @@ Service). (n.d.). Retrieved December 13, 2025, from
 Natural resources monitoring at Arches National Park 
 (U.S. National Park Service). (n.d.). Retrieved December 13, 2025, from 
 [https://www.nps.gov/im/ncpn/arch.htm](https://www.nps.gov/im/ncpn/arch.htm)
-:::
 
-## Column map {width='55%'}
+## Column ncpn map {width='50%'}
 
-```{r arch_map}
-cat("title= Map of Arches") 
+```{r ncpn_map}
+cat("title= Map of NCPN Park Units") 
 
-map_leaflet(ncpn_units %>% filter(UNIT_CODE == 'ARCH'), 
-            '38.710283', '-109.585540', 
-            zoom = 11,
-            'esri')
+leaflet(data = ncpn_units) %>%
+  setView(lat = '38.931732', lng = '-109.828180', zoom = 7) %>%
+  addTiles(group = 'OpenStreetMap') %>%
+  addPolylines(data = ncpn_units %>% filter(UNIT_CODE != 'ARCH'),
+               weight = 3, color = 'darkgreen') %>%
+  addPolylines(data = ncpn_units %>% filter(UNIT_CODE == 'ARCH'),
+               weight = 3, color = 'darkorange') %>%
+  addLayersControl(
+    baseGroups = c('OpenStreetMap', 'ESRI World Imagery')) %>%
+  addLegend(data = data,
+            position = 'bottomright',
+            colors =c('darkgreen', 'darkorange'),
+            labels = c('Park boundary', 'Arches NP boundary'),
+            title = "Legend",
+            opacity = 1)
 ```
 
 # Sampling Design & Methods
@@ -246,22 +235,16 @@ I downloaded the [NCPN point-intercept CSV](https://irma.nps.gov/DataStore/Refer
 filtered for only Arches National Park and live vegetation 
 records, then calculated percent cover by species to the plot level.
 
-Since there are 84 plots, I explored the data to look for a meaningful way to 
-show vegetation cover change over time for my final product. First, I calculated
-the maximum change for 
-each species per plot, summed the total change per plot, and reviewed the 
-top five plots with the highest change. Next, I calculated the species change 
-between the first and last survey years and reviewed the plots/species with the 
-greatest change. After this review, I added one 
-additional plot to my list of plots with the highest change.
+Since there are 84 plots, I wanted to explore the data to find the a 
+meaningful but efficient way to show vegetation cover changes over time or
+identify particular plots to focus on. First, I calculated percent change for 
+each species using min and max values, regardless of year. Next, I calculated 
+percent change for each species from the first to last survey year. For both, I
+reviewed species with 10 percent change or greater, and identified select 
+species and plots to focus on.
 
-Without spatial data or knowledge of
-management actions, I felt the best way to communicate vegetation cover
-changes was to show park-level species change instead of plot-level. I converted
-the vegetation cover from percentage to area, summed the cover area by species 
-and year, and then calculated the percent area change in vegetation cover. Since 
-there are 106 different species, I only included the top five species per year 
-for my final graph.
+I converted the vegetation cover from percentage to area, summed the cover area 
+by species and year, and then calculated the percent area in vegetation cover.
 :::
 
 ### Column {.tabset width='55%'}
