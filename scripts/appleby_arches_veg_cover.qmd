@@ -293,9 +293,9 @@ park-level.
 
 ::: {.content}
 
-| | | |
-|---|---|---|
-| ![](`r results_graphs[1]`) | ![](`r results_graphs[2]`) | ![](`r results_graphs[3]`) |
+| | | | |
+|---|---|---|--|
+| ![](`r results_graphs[1]`) | ![](`r results_graphs[2]`) | ![](`r results_graphs[3]`) | ![](`r results_graphs[4]`) |
 
 :::
 
@@ -303,9 +303,9 @@ park-level.
 
 ::: {.content}
 
-| | | |
-|---|---|---|
-| ![](`r results_graphs[4]`) | ![](`r results_graphs[5]`) | ![](`r results_graphs[6]`) |
+| | | | |
+|---|---|---|--|
+| ![](`r results_graphs[5]`) | ![](`r results_graphs[6]`) | ![](`r results_graphs[7]`) | ![](`r results_graphs[8]`) |
 
 :::
 
