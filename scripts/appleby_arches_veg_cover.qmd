@@ -67,7 +67,8 @@ species_area_top <- read_csv(here('data/species_area_top.csv'))
 species_area_top_grasslands <- read_csv(here('data/species_top_grasslands.csv'))
 
 ### NCPN PARK BOUNDARIES ###
-ncpn_units <-  st_read(here('data/NCPN_unit_boundaries/NCPN_unit_boundaries.shp')) %>% 
+ncpn_units <-  st_read(
+  here('data/NCPN_unit_boundaries/NCPN_unit_boundaries.shp')) %>% 
   st_transform(crs = 4326)
 
 arches_boundary <- ncpn_units %>%
@@ -245,7 +246,7 @@ identify particular plots to focus on. First, I calculated percent change for
 each species using min and max values, regardless of year. Next, I calculated 
 percent change for each species from the first to last survey year. For both, I
 reviewed species with 10 percent change or greater, and identified select 
-species and plots to focus on (see tables to the right).
+plots and species to focus on (see tables to the right).
 
 To visualize the vegetation cover change, I converted cover from percentage to 
 area, summed the cover area by species and year, and then calculated the percent
@@ -270,42 +271,43 @@ datatable(species_trend %>% select(-c(Scientific_Name, Trend)),
           options = list(searching = FALSE))
 ```
 
-# Results
+# Results {orientation='rows'}
 
-```{r results_graphs, include = F}
-species <- c('BRTE', 'PLPA2', 'SATR12')
-plots <- c(26, 91, 92, 101)
-
-results_graphs <- lapply(plots, function(plot_id) {
-  
-  plot_data <- arches_cover %>%
-    filter(Plot_ID == plot_id)
-  
-  if (nrow(plot_data) == 0) return(NULL)
-  
-  g <- ggplot(plot_data, aes(x = Start_Date, y = Cover_pct, fill = Species)) +
-    geom_col(position = "stack") +
-    scale_x_date(
-      date_breaks = '1 year', date_labels = '%Y'
-    ) +
-    scale_fill_viridis_d(option = 'turbo') +
-    labs(title = paste0('Vegetation Cover for Plot ', plot_id),
-                  x = "Year",
-                  y = "Percent Cover",
-                  fill = "Species") +
-    theme_minimal() +
-    theme(panel.grid.minor.x = element_blank())
-  
-  if (length(unique(plot_data$Species)) > 8) {
-    g + theme(legend.text = element_text(size = 7),
-              legend.key.size = unit(1, 'line')) +
-      guides(fill = guide_legend(ncol = 2))
-  }
-  
-  g
-})
-
-
+```{r graphs, include = F}
+results_graphs <- list.files(here('plots'), full.names = TRUE)
 ```
+
+## Row {height='30%'}
+
+### Results
+These plots focus on species with large changes in cover over time and were 
+selected based on their frequency in the Species Change and Species Trend 
+tables. Area of vegetation cover was used to observe changes in cover over time at the 
+park-level.
+
+## Row {height='70%'}
+
+### Column {width='100%' .tabset}
+
+#### Plot-Level Change
+
+::: {.content}
+
+| | | |
+|---|---|---|
+| ![](`r results_graphs[1]`) | ![](`r results_graphs[2]`) | ![](`r results_graphs[3]`) |
+
+:::
+
+#### Park-Level Change
+
+::: {.content}
+
+| | | |
+|---|---|---|
+| ![](`r results_graphs[4]`) | ![](`r results_graphs[5]`) | ![](`r results_graphs[6]`) |
+
+:::
+
 # Discussion
 

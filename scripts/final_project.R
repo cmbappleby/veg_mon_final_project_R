@@ -112,12 +112,16 @@ write.csv(species_trend,
 # 26, 91, 92, and 101. The only master stratification class was grasslands. My 
 # analysis focuses on these species, plots, and strata.
 
+# Note: After looking at the plots, I chose not to include Plot 26 in the
+# dashboard.
+
 ### ANALYSIS & FINAL PRODUCTS ###
 
 species <- c('BRTE', 'PLPA2', 'SATR12')
-plots <- c(26, 91, 92, 101)
+plots <- c(91, 92, 101)
 
-# Create and save graphs of species change for selected plots
+# Create and save graphs of species change for selected plots.
+# Plots are created to go in the dashboard, not as standalone plots.
 lapply(plots, function(plot_id) {
   
   plot_data <- arches_cover %>%
@@ -131,24 +135,25 @@ lapply(plots, function(plot_id) {
       date_breaks = '1 year', date_labels = '%Y'
     ) +
     scale_fill_viridis_d(option = 'turbo') +
-    labs(title = paste0('Vegetation Cover for Plot ', plot_id),
+    labs(title = paste0('Plot ', plot_id),
                   x = "Year",
                   y = "Percent Cover",
                   fill = "Species") +
     theme_minimal() +
-    theme(panel.grid.minor.x = element_blank())
+    theme(panel.grid.minor.x = element_blank(),
+          legend.position = 'none',
+          plot.title = element_text(hjust = 0.5))
   
-  if (length(unique(plot_data$Species)) > 8) {
-    g + theme(legend.text = element_text(size = 7),
-              legend.key.size = unit(1, 'line')) +
-      guides(fill = guide_legend(ncol = 2))
-  }
+  # if (length(unique(plot_data$Species)) > 8) {
+  #   g + theme(legend.text = element_text(size = 7),
+  #             legend.key.size = unit(1, 'line')) +
+  #     guides(fill = guide_legend(ncol = 2))
+  # }
   
-  ggsave(paste0('plots/Plot_', plot_id, '.png'))
+  ggsave(paste0('plots/1_Plot_', plot_id, '.png'),
+         height = 3,
+         width = 4)
 })
-
-# Note: After looking at the plots, I chose not to include Plot 26 in the
-# dashboard.
 
 ## PARK-LEVEL CHANGE OF SELECT SPECIES, TOP FIVE SPECIES & GRASSLANDS ##
 
@@ -203,7 +208,7 @@ ggplot(data = species_area_select %>% mutate(yr_date = ymd(Visit_Year, truncated
   theme(panel.grid.minor.x = element_blank(),
         axis.text.x = element_text(angle = 45))
 
-ggsave(here('plots/species_area_select.png'))
+ggsave(here('plots/2_species_area_select.png'))
 
 # Top five species cover area per year
 species_area_top <- species_area_year %>%
@@ -220,7 +225,7 @@ write.csv(species_area_top,
 # Create graph and save
 ggplot(data = species_area_top %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
        aes(x = yr_date, y = Total_Cover_pct, fill = Species)
-) +
+  ) +
   geom_col(position = "stack") +
   scale_x_date(
     date_breaks = '1 year', date_labels = '%Y'
@@ -237,7 +242,7 @@ ggplot(data = species_area_top %>% mutate(yr_date = ymd(Visit_Year, truncated = 
         legend.key.size = unit(1, 'line')) +
   guides(fill = guide_legend(ncol = 2))
 
-ggsave(here('plots/species_area_top.png'))
+ggsave(here('plots/2_species_area_top.png'))
 
 # Grasslands top five species cover per year
 grasslands_species_area_yr <- species_area %>%
@@ -259,7 +264,7 @@ grasslands_species_area_yr <- species_area %>%
 
 # Save CSV for use in dashboard
 write.csv(grasslands_species_area_yr,
-          here('data/species_top_grasslands.csv'),
+          here('data/2_species_top_grasslands.csv'),
           row.names = FALSE)
   
 # Create graph and save
@@ -283,7 +288,7 @@ ggplot(data = grasslands_species_area_yr %>% mutate(yr_date = ymd(Visit_Year, tr
         ) +
   guides(fill = guide_legend(ncol = 2))
   
-ggsave(here('plots/grassland_species_area_top.png'))
+ggsave(here('plots/2_species_area_top_grassland.png'))
 
 
 ### FAILED ATTEMPT TO ADD COORDINATES ###
