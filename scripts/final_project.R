@@ -286,21 +286,24 @@ ggsave(here('plots/6_master_area_legend.png'),
        dpi = 150)
 
 # Create graph and save
-ggplot(data = species_area_select %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
+ggplot(data = species_area_select %>% 
+         mutate(yr_date = ymd(Visit_Year, truncated = 2L),
+                Species = factor(Species)), 
        aes(x = yr_date, y = Total_Cover_pct, fill = Species)
 ) +
   geom_col(position = "stack") +
   scale_x_date(
     date_breaks = '1 year', date_labels = '%Y'
   ) +
-  scale_fill_viridis_d(option = 'turbo') +
+  scale_fill_manual(values = area_species_colors, drop = FALSE) +
   labs(title = paste0('Select Species (BRTE, PLPA2, SATR12)'),
        x = "Year",
        y = "Percent Cover",
        fill = "Species") +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(),
-        axis.text.x = element_text(angle = 45))
+        axis.text.x = element_text(angle = 45),
+        legend.position = 'none')
 
 ggsave(here('plots/3_species_area_select.png'),
        height = 3,
