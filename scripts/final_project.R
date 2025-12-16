@@ -1,5 +1,6 @@
 library(here)
 library(tidyverse)
+library(confintr)
 
 ### CALCULATE PERCENT COVER ###
 # Data source:
@@ -7,7 +8,7 @@ library(tidyverse)
 
 # Load plants lookup table, just in case
 tlu_plants <- read_csv(here('data/NCPN_IntegratedUplands_PlantsLookup.csv')) %>%
-  select(c(Master_Plant_Code, Master_Common_Name))
+  select(c(Master_Plant_Code:Master_Species, Master_Common_Name:Nativity))
 
 # Load NCPN point-intercept data and filter for Arches National Park
 arches_veg <- read_csv(
@@ -176,12 +177,6 @@ lapply(plots, function(plot_id) {
           legend.position = 'none',
           plot.title = element_text(hjust = 0.5))
   
-  # if (length(unique(plot_data$Species)) > 8) {
-  #   g + theme(legend.text = element_text(size = 7),
-  #             legend.key.size = unit(1, 'line')) +
-  #     guides(fill = guide_legend(ncol = 2))
-  # }
-  
   ggsave(paste0('plots/1_Plot_', plot_id, '.png'),
          height = 3,
          width = 4)
@@ -223,27 +218,6 @@ write.csv(species_area_select,
           here('data/species_area_select.csv'), 
           row.names = FALSE)
 
-# Create graph and save
-ggplot(data = species_area_select %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
-  aes(x = yr_date, y = Total_Cover_pct, fill = Species)
-) +
-  geom_col(position = "stack") +
-  scale_x_date(
-    date_breaks = '1 year', date_labels = '%Y'
-  ) +
-  scale_fill_viridis_d(option = 'turbo') +
-  labs(title = paste0('Select Species (BRTE, PLPA2, SATR12)'),
-       x = "Year",
-       y = "Percent Cover",
-       fill = "Species") +
-  theme_minimal() +
-  theme(panel.grid.minor.x = element_blank(),
-        axis.text.x = element_text(angle = 45))
-
-ggsave(here('plots/3_species_area_select.png'),
-       height = 3,
-       width = 4)
-
 # Top five species cover area per year
 species_area_top <- species_area_year %>%
   group_by(Visit_Year) %>%
@@ -255,31 +229,6 @@ species_area_top <- species_area_year %>%
 write.csv(species_area_top, 
           here('data/species_area_top.csv'), 
           row.names = FALSE)
-
-# Create graph and save
-ggplot(data = species_area_top %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
-       aes(x = yr_date, y = Total_Cover_pct, fill = Species)
-  ) +
-  geom_col(position = "stack") +
-  scale_x_date(
-    date_breaks = '1 year', date_labels = '%Y'
-  ) +
-  scale_fill_viridis_d(option = 'turbo') +
-  labs(title = paste0('Top 5 Species Each Year'),
-       x = "Year",
-       y = "Percent Cover",
-       fill = "Species") +
-  theme_minimal() +
-  theme(panel.grid.minor.x = element_blank(),
-        axis.text.x = element_text(angle = 45),
-  #       legend.text = element_text(size = 7),
-  #       legend.key.size = unit(1, 'line')) +
-  # guides(fill = guide_legend(ncol = 2))
-          legend.position = 'none')
-
-ggsave(here('plots/4_species_area_top.png'),
-       height = 3,
-       width = 4)
 
 # Grasslands top five species cover per year
 grasslands_species_area_top <- species_area %>%
@@ -303,32 +252,6 @@ grasslands_species_area_top <- species_area %>%
 write.csv(grasslands_species_area_top,
           here('data/species_top_grasslands.csv'),
           row.names = FALSE)
-  
-# Create graph and save
-ggplot(data = grasslands_species_area_top %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
-       aes(x = yr_date, y = Total_Cover_pct, fill = Species)
-  ) +
-  geom_col(position = "stack") +
-  scale_x_date(
-    date_breaks = '1 year', date_labels = '%Y'
-  ) +
-  scale_fill_viridis_d(option = 'turbo') +
-  labs(title = paste0('Grasslands\nTop 5 Species Each Year'),
-       x = "Year",
-       y = "Percent Cover",
-       fill = "Species") +
-  theme_minimal() +
-  theme(panel.grid.minor.x = element_blank(),
-        axis.text.x = element_text(angle = 45),
-  #       legend.text = element_text(size = 7),
-  #       legend.key.size = unit(1, 'line')
-  #       ) +
-  # guides(fill = guide_legend(ncol = 2))
-          legend.position = 'none')
-  
-ggsave(here('plots/5_species_area_top_grassland.png'),
-       height = 3,
-       width = 4)
 
 # Create master legend
 area_top <- species_area_top %>%
@@ -344,7 +267,7 @@ area_top <- area_top %>%
   mutate(Species = factor(Species, levels = area_top_species))
 
 legend_area_graph <- ggplot(data = area_top,
-                       aes(x = yr_date, y = Total_Cover_pct, fill = Species)) +
+                            aes(x = yr_date, y = Total_Cover_pct, fill = Species)) +
   geom_col(position = 'stack') +
   scale_fill_manual(values = area_species_colors, drop = FALSE) +
   theme_minimal() +
@@ -361,6 +284,87 @@ ggsave(here('plots/6_master_area_legend.png'),
        height = 1.7,
        width = 1.3,
        dpi = 150)
+
+# Create graph and save
+ggplot(data = species_area_select %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
+       aes(x = yr_date, y = Total_Cover_pct, fill = Species)
+) +
+  geom_col(position = "stack") +
+  scale_x_date(
+    date_breaks = '1 year', date_labels = '%Y'
+  ) +
+  scale_fill_viridis_d(option = 'turbo') +
+  labs(title = paste0('Select Species (BRTE, PLPA2, SATR12)'),
+       x = "Year",
+       y = "Percent Cover",
+       fill = "Species") +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(angle = 45))
+
+ggsave(here('plots/3_species_area_select.png'),
+       height = 3,
+       width = 4)
+
+# Create graph and save
+ggplot(data = species_area_top %>% mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
+       aes(x = yr_date, y = Total_Cover_pct, fill = Species)
+) +
+  geom_col(position = "stack") +
+  scale_x_date(
+    date_breaks = '1 year', date_labels = '%Y'
+  ) +
+  scale_fill_manual(values = area_species_colors, drop = FALSE) +
+  labs(title = paste0('Top 5 Species Each Year'),
+       x = "Year",
+       y = "Percent Cover",
+       fill = "Species") +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(angle = 45),
+        #       legend.text = element_text(size = 7),
+        #       legend.key.size = unit(1, 'line')) +
+        # guides(fill = guide_legend(ncol = 2))
+        legend.position = 'none')
+
+ggsave(here('plots/4_species_area_top.png'),
+       height = 3,
+       width = 4.1)
+  
+# Create graph and save
+ggplot(data = grasslands_species_area_top %>% 
+         mutate(yr_date = ymd(Visit_Year, truncated = 2L)), 
+       aes(x = yr_date, y = Total_Cover_pct, fill = Species)
+  ) +
+  geom_col(position = "stack") +
+  scale_x_date(
+    date_breaks = '1 year', date_labels = '%Y'
+  ) +
+  scale_fill_manual(values = area_species_colors, drop = FALSE) +
+  labs(title = paste0('Grasslands\nTop 5 Species Each Year'),
+       x = "Year",
+       y = "Percent Cover",
+       fill = "Species") +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(angle = 45),
+        legend.position = 'none')
+  
+ggsave(here('plots/5_species_area_top_grassland.png'),
+       height = 3,
+       width = 4.1)
+
+# Aggregate all unique species from all the graphs
+all_species <- c(plot_species, area_top_species, species)
+all_species <- unique(all_species)
+
+all_species_df <- data.frame(all_species) %>%
+  rename(Species = all_species) %>%
+  left_join(tlu_plants, by = join_by(Species == Master_Plant_Code))
+
+# Save CSV for use in dashboard
+write.csv(all_species_df, here('data/all_species.csv'), row.names = FALSE)
+
 
 ### FAILED ATTEMPT TO ADD COORDINATES ###
 # The SEUG dataset includes upland veg data from ARCH, so I attempted to join 

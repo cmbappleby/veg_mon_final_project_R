@@ -23,39 +23,6 @@ list.of.packages <- c('tidyverse',  'sf', 'leaflet', 'here', 'DT',
 lapply(list.of.packages, library, character.only = T)
 ```
 
-```{r map leaflet setup}
-map_leaflet <- function(data, center_lat, center_long, zoom, basemap){
-  m = leaflet(data = data) %>%
-  setView(lat = center_lat, lng = center_long, zoom = zoom)
-  
-  if (basemap == "osm") {
-    m <- m %>%
-      addTiles(group = "OpenStreetMap")
-  } else {
-    m <- m %>%
-      addProviderTiles(
-        provider = "Esri.WorldImagery",
-        group = "ESRI World Imagery"
-      )
-  }
-
-  m <- m %>%
-  addPolylines(data = data,
-               weight = 3, color = "darkgreen") %>%
-  # addLayersControl(
-  #   baseGroups = c('OpenStreetMap', 'ESRI World Imagery')) %>%
-  addLegend(data = data,
-            position = 'bottomright',
-            colors =c('darkgreen'),
-            labels = c('Park boundary'),
-            title = "Legend",
-            opacity = 1)
-
-m
-}
-
-```
-
 ```{r data import setup, include = F}
 
 ### VEG DATA ###
@@ -65,6 +32,7 @@ species_trend <- read_csv(here('data/species_trend.csv'))
 species_area_select <- read_csv(here('data/species_area_select.csv'))
 species_area_top <- read_csv(here('data/species_area_top.csv'))
 species_area_top_grasslands <- read_csv(here('data/species_top_grasslands.csv'))
+all_species <- read_csv(here('data/all_species.csv'))
 
 ### NCPN PARK BOUNDARIES ###
 ncpn_units <-  st_read(
@@ -277,19 +245,24 @@ datatable(species_trend %>% select(-c(Scientific_Name, Trend)),
 results_graphs <- list.files(here('plots'), full.names = TRUE)
 ```
 
-## Row {height='30%'}
+## Row {height='20%'}
 
 ### Results
-These plots focus on species with large changes in cover over time and were 
-selected based on their frequency in the Species Change and Species Trend 
-tables. Area of vegetation cover was used to observe changes in cover over time at the 
-park-level.
+The plot-level charts focus on species with large changes in cover over time 
+and were selected based on their frequency in the Species Change and Species 
+Trend tables. The park-level charts show changes in vegetation cover by area 
+across all plots. The species list contains select data from the species lookup 
+table for the species shown in the charts.
 
-## Row {height='70%'}
+## Row {height='80%'}
 
 ### Column {width='100%' .tabset}
 
 #### Plot-Level Change
+
+::: {style='text-align: center; font-size: 125%;'}
+Arches National Park Vegetation Cover Per Plot
+:::
 
 ::: {.content}
 
@@ -301,12 +274,24 @@ park-level.
 
 #### Park-Level Change
 
+::: {style='text-align: center; font-size: 125%;'}
+Arches National Park Total Vegetation Cover (Area)
+:::
+
 ::: {.content}
 
 | | | | |
 |---|---|---|--|
 | ![](`r results_graphs[5]`) | ![](`r results_graphs[6]`) | ![](`r results_graphs[7]`) | ![](`r results_graphs[8]`) |
 
+:::
+
+#### Species List
+
+::: {.content}
+```{r}
+datatable(arrange(all_species, Species), rownames = FALSE)
+```
 :::
 
 # Discussion
