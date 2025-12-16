@@ -6,7 +6,6 @@ format:
     orientation: columns
     embed-resources: true
     theme: lumen_mh.scss
-    css: styles.css
 ---
 
 ```{r setup, include = F}
@@ -208,17 +207,19 @@ I downloaded the [NCPN point-intercept CSV](https://irma.nps.gov/DataStore/Refer
 filtered for only Arches National Park and live vegetation 
 records, then calculated percent cover by species to the plot level.
 
-Since there are 84 plots, I wanted to explore the data to find the a 
+Since there are 84 plots, I wanted to explore the data to find a 
 meaningful but efficient way to show vegetation cover changes over time or
 identify particular plots to focus on. First, I calculated percent change for 
 each species using min and max values, regardless of year. Next, I calculated 
 percent change for each species from the first to last survey year. For both, I
-reviewed species with 10 percent change or greater, and identified select 
+reviewed species with 10 percent change or greater and identified select 
 plots and species to focus on (see tables to the right).
 
 To visualize the vegetation cover change, I converted cover from percentage to 
 area, summed the cover area by species and year, and then calculated the percent
 area (species cover area / total area sampled * 100).
+
+Data, scripts, and outputs are on [GitHub](https://github.com/cmbappleby/veg_mon_final_project_R).
 :::
 
 ### Column {.tabset width='55%'}
@@ -245,16 +246,19 @@ datatable(species_trend %>% select(-c(Scientific_Name, Trend)),
 results_graphs <- list.files(here('plots'), full.names = TRUE)
 ```
 
-## Row {height='20%'}
+## Row {height='25%'}
 
 ### Results
+
+::: {.card title='Results'}
 The plot-level charts focus on species with large changes in cover over time 
-and were selected based on their frequency in the Species Change and Species 
+that I selected based on their frequency in the Species Change and Species 
 Trend tables. The park-level charts show changes in vegetation cover by area 
 across all plots. The species list contains select data from the species lookup 
 table for the species shown in the charts.
+:::
 
-## Row {height='80%'}
+## Row {height='75%'}
 
 ### Column {width='100%' .tabset}
 
@@ -296,3 +300,36 @@ datatable(arrange(all_species, Species), rownames = FALSE)
 
 # Discussion
 
+## Column {width='50%'}
+::: {.card title = 'Change in Vegetation Cover'}
+Without knowledge of management actions or other events at the park, and with no
+location data, I can only speculate as to why vegetation cover changed over 
+time at the selected plots. 
+
+Between 2015 and 2022, the cover of an invasive 
+annual grass (ERTR13) increased by over 15 percent. At Plot 91, between
+2015 and 2022, the cover of an invasive annual grass (BRTE) increased by over 
+20 percent. This could be due to some type of disturbance, and I initially 
+thought fire because of the low vegetation cover at Plot 91 in 2021, but I did 
+not find any reports of fires in the park in 2020 or 2021.
+
+The cover of an invasive annual (SATR12), increases in 2022 at Plot 101, and 
+then was not even recorded in 2023. This could be due to an invasive species 
+treatment.
+
+Although I cannot explain why the changes in vegetation cover occurred, this 
+analysis demonstrates how vegetation cover data are helpful for park managers 
+to detect shifts in plant communities. For example, we can see an increase in 
+invasive annual grasses, which could prompt park managers to implement invasive 
+species treatments.
+:::
+
+## Column {width='50%'}
+
+::: {.card title='Indian Ricegrass'}
+Looking at low percentages of Indian Ricegrass cover in grasslands, it appears
+that this native perennial grass has been outcompeted by invasive annual 
+grasses.
+
+![Source: NPS](../images/Indian-ricegrass-1.webp)
+:::
